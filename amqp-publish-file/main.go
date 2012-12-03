@@ -16,13 +16,13 @@ import (
 )
 
 type ExitCodes int
-const (
-  Success = 0
-  ArgumentParsingError = 1
-  ConnectionError = 2
-  ChannelOpenError = 3
-)
 
+const (
+	Success              = 0
+	ArgumentParsingError = 1
+	ConnectionError      = 2
+	ChannelOpenError     = 3
+)
 
 func getOptions() (options *Options) {
 	options = NewOptions()
