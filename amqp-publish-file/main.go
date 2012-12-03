@@ -33,6 +33,7 @@ func getOptions() (options *Options) {
 	optarg.Add("h", "help", "Help", options.Help)
 
 	optarg.Header("AMQP options")
+	optarg.Add("U", "uri", "AMQP connection URI", options.URI)
 	optarg.Add("u", "username", "AMQP username", options.Username)
 	optarg.Add("p", "password", "AMQP password", options.Password)
 	optarg.Add("H", "host", "AMQP host", options.Host)
@@ -89,6 +90,7 @@ func getOptions() (options *Options) {
 type Options struct {
 	Help bool
 
+	URI      string
 	Username string
 	Password string
 	Host     string
@@ -106,6 +108,7 @@ type Options struct {
 
 func NewOptions() *Options {
 	return &Options{
+		URI:      "",
 		Username: "guest",
 		Password: "guest",
 		Host:     "localhost",
@@ -117,14 +120,17 @@ func main() {
 	var options *Options
 	var err error
 
-	var connectionUri string
 	var conn *amqp.Connection
 	var channel *amqp.Channel
 	var message *amqp.Publishing
 
 	options = getOptions()
 
-	connectionUri = fmt.Sprintf("amqp://%s:%s@%s:%d/%s", options.Username, options.Password, options.Host, options.Port, options.VHost)
+	connectionUri := options.URI
+	if len(connectionUri) < 1 {
+		connectionUri = fmt.Sprintf("amqp://%s:%s@%s:%d/%s", options.Username,
+			options.Password, options.Host, options.Port, options.VHost)
+	}
 
 	if conn, err = amqp.Dial(connectionUri); err != nil {
 		fmt.Printf("Failed to open connection: %s", err.Error())
