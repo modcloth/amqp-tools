@@ -2,17 +2,13 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"mime"
 	"os"
-	"path/filepath"
-	"time"
 )
 
 import (
 	"github.com/jteeuwen/go-pkg-optarg"
-	"github.com/streadway/amqp"
+	. "github.com/modcloth/amqp-tools"
 )
 
 type ExitCodes int
@@ -27,7 +23,8 @@ const (
 func getOptions() (options *Options) {
 	options = NewOptions()
 
-	optarg.UsageInfo = fmt.Sprintf("Usage: %s [options] [exchange] [file ...]:", os.Args[0])
+	optarg.UsageInfo = fmt.Sprintf(
+		"Usage: %s [options] [exchange] [file ...]:", os.Args[0])
 
 	optarg.Header("Executable options")
 	optarg.Add("h", "help", "Help", options.Help)
@@ -118,11 +115,6 @@ func NewOptions() *Options {
 
 func main() {
 	var options *Options
-	var err error
-
-	var conn *amqp.Connection
-	var channel *amqp.Channel
-	var message *amqp.Publishing
 
 	options = getOptions()
 
@@ -132,36 +124,24 @@ func main() {
 			options.Password, options.Host, options.Port, options.VHost)
 	}
 
-	if conn, err = amqp.Dial(connectionUri); err != nil {
-		fmt.Printf("Failed to open connection: %s", err.Error())
-		os.Exit(ConnectionError)
-	}
-	defer conn.Close()
+	resultChan := make(chan *PublishFileResult)
+	go PublishFiles(options.Files, connectionUri, options.ContentType, options.Exchange,
+		options.RoutingKey, options.Mandatory, options.Immediate, resultChan)
 
-	if channel, err = conn.Channel(); err != nil {
-		log.Fatal("Failed to open channel: ", err)
-		os.Exit(ChannelOpenError)
-	}
-
-	message = &amqp.Publishing{
-		DeliveryMode: amqp.Persistent,
-		Timestamp:    time.Now(),
-		ContentType:  options.ContentType,
-		Body:         make([]byte, 0),
-	}
-
-	for _, file := range options.Files {
-		if message.ContentType == "" {
-			message.ContentType = mime.TypeByExtension(filepath.Ext(file))
-		}
-
-		if message.Body, err = ioutil.ReadFile(file); err != nil {
-			fmt.Printf("Failed to read file %s: %s", file, err.Error())
-			continue
-		}
-
-		if err = channel.Publish(options.Exchange, options.RoutingKey, options.Mandatory, options.Immediate, *message); err != nil {
-			fmt.Printf("Failed to message file %s: %s", file, err.Error())
+	for result := range resultChan {
+		if result.Error != nil {
+			switch result.Message {
+			case "Failed to connect":
+				log.Println("FATAL:", result.Message, result.Error)
+				os.Exit(ConnectionError)
+			case "Failed to get channel", "Failed to put channel into confirm mode":
+				log.Println("FATAL:", result.Message, result.Error)
+				os.Exit(ChannelOpenError)
+			default:
+				log.Println("ERROR:", result.Message, result.Filename, result.Error)
+			}
+		} else {
+			log.Println(result.Message, result.Filename)
 		}
 	}
 }

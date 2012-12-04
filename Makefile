@@ -1,5 +1,5 @@
 TARGETS := \
-  github.com/modcloth/amqp-tools/amqp-publish-file
+  github.com/modcloth/amqp-tools/amqp-publish-files
 
 all: build test
 
