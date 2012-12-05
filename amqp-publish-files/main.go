@@ -44,6 +44,8 @@ func getOptions() (options *Options) {
 
 	for opt := range optarg.Parse() {
 		switch opt.Name {
+		case "uri":
+			options.URI = opt.String()
 		case "username":
 			options.Username = opt.String()
 		case "password":

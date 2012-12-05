@@ -42,6 +42,7 @@ func PublishFiles(files chan string, connectionUri, defaultContentType, exchange
 	}
 
 	pubAcks, pubNacks := channel.NotifyConfirm(make(chan uint64), make(chan uint64))
+	chanClose := channel.NotifyClose(make(chan *amqp.Error))
 
 	if err = channel.Confirm(false); err != nil {
 		results <- &PublishFileResult{"", "Failed to put channel into confirm mode", err, true}
@@ -81,6 +82,13 @@ func PublishFiles(files chan string, connectionUri, defaultContentType, exchange
 		}
 
 		select {
+		case err = <-chanClose:
+			results <- &PublishFileResult{
+				"",
+				"Channel closed!",
+				err,
+				true,
+			}
 		case <-pubAcks:
 			results <- &PublishFileResult{
 				file,
