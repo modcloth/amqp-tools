@@ -19,7 +19,7 @@ type PublishFileResult struct {
 	IsFatal  bool
 }
 
-func PublishFiles(files []string, connectionUri, defaultContentType, exchange,
+func PublishFiles(files chan string, connectionUri, defaultContentType, exchange,
 	routingKey string, mandatory, immediate bool, results chan *PublishFileResult) {
 
 	var err error
@@ -55,7 +55,7 @@ func PublishFiles(files []string, connectionUri, defaultContentType, exchange,
 		Body:         make([]byte, 0),
 	}
 
-	for _, file := range files {
+	for file := range files {
 		if message.ContentType == "" {
 			message.ContentType = mime.TypeByExtension(filepath.Ext(file))
 		}

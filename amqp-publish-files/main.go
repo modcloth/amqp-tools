@@ -123,8 +123,15 @@ func main() {
 			options.Password, options.Host, options.Port, options.VHost)
 	}
 
+	fileChan := make(chan string)
 	resultChan := make(chan *PublishFileResult)
-	go PublishFiles(options.Files, connectionUri, options.ContentType, options.Exchange,
+	go func() {
+		for _, file := range options.Files {
+			fileChan <- file
+		}
+		close(fileChan)
+	}()
+	go PublishFiles(fileChan, connectionUri, options.ContentType, options.Exchange,
 		options.RoutingKey, options.Mandatory, options.Immediate, resultChan)
 
 	for result := range resultChan {
