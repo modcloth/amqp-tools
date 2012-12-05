@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 import (
@@ -127,14 +130,34 @@ func main() {
 
 	fileChan := make(chan string)
 	resultChan := make(chan *PublishFileResult)
+
 	go func() {
-		for _, file := range options.Files {
-			fileChan <- file
+		defer close(fileChan)
+
+		if len(options.Files) == 1 && options.Files[0] == "-" {
+			log.Println("Reading files from stdin")
+			stdin := bufio.NewReader(os.Stdin)
+			for {
+				line, err := stdin.ReadString('\n')
+				if err != nil {
+					if err != io.EOF {
+						log.Println("ERROR:", err)
+					}
+					break
+				}
+				fileChan <- strings.TrimSpace(line)
+			}
+		} else {
+			log.Println("Using files provided on command line")
+			for _, file := range options.Files {
+				fileChan <- file
+			}
 		}
-		close(fileChan)
 	}()
-	go PublishFiles(fileChan, connectionUri, options.ContentType, options.Exchange,
-		options.RoutingKey, options.Mandatory, options.Immediate, resultChan)
+
+	go PublishFiles(fileChan, connectionUri, options.ContentType,
+		options.Exchange, options.RoutingKey, options.Mandatory,
+		options.Immediate, resultChan)
 
 	for result := range resultChan {
 		if result.Error != nil {
@@ -142,7 +165,8 @@ func main() {
 				log.Println("FATAL:", result.Message, result.Error)
 				os.Exit(FatalError)
 			} else {
-				log.Println("ERROR:", result.Message, result.Filename, result.Error)
+				log.Println("ERROR:", result.Message,
+					result.Filename, result.Error)
 			}
 		} else {
 			log.Println(result.Message, result.Filename)

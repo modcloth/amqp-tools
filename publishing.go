@@ -2,6 +2,7 @@ package amqptools
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"mime"
 	"path/filepath"
@@ -45,7 +46,12 @@ func PublishFiles(files chan string, connectionUri, defaultContentType, exchange
 	chanClose := channel.NotifyClose(make(chan *amqp.Error))
 
 	if err = channel.Confirm(false); err != nil {
-		results <- &PublishFileResult{"", "Failed to put channel into confirm mode", err, true}
+		results <- &PublishFileResult{
+			"",
+			"Failed to put channel into confirm mode",
+			err,
+			true,
+		}
 		return
 	}
 
@@ -71,7 +77,9 @@ func PublishFiles(files chan string, connectionUri, defaultContentType, exchange
 			continue
 		}
 
-		if err = channel.Publish(exchange, routingKey, mandatory, immediate, *message); err != nil {
+		if err = channel.Publish(exchange, routingKey, mandatory,
+			immediate, *message); err != nil {
+
 			results <- &PublishFileResult{
 				file,
 				"Failed to publish file",
@@ -92,7 +100,8 @@ func PublishFiles(files chan string, connectionUri, defaultContentType, exchange
 		case <-pubAcks:
 			results <- &PublishFileResult{
 				file,
-				"Successfully published file",
+				fmt.Sprintf("Published to exchange '%s' routing key '%v':",
+					exchange, routingKey),
 				nil,
 				false,
 			}
