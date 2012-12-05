@@ -16,6 +16,7 @@ type PublishFileResult struct {
 	Filename string
 	Message  string
 	Error    error
+	IsFatal  bool
 }
 
 func PublishFiles(files []string, connectionUri, defaultContentType, exchange,
@@ -29,21 +30,21 @@ func PublishFiles(files []string, connectionUri, defaultContentType, exchange,
 	defer close(results)
 
 	if conn, err = amqp.Dial(connectionUri); err != nil {
-		results <- &PublishFileResult{"", "Failed to connect", err}
+		results <- &PublishFileResult{"", "Failed to connect", err, true}
 		return
 	}
 
 	defer conn.Close()
 
 	if channel, err = conn.Channel(); err != nil {
-		results <- &PublishFileResult{"", "Failed to get channel", err}
+		results <- &PublishFileResult{"", "Failed to get channel", err, true}
 		return
 	}
 
 	pubAcks, pubNacks := channel.NotifyConfirm(make(chan uint64), make(chan uint64))
 
 	if err = channel.Confirm(false); err != nil {
-		results <- &PublishFileResult{"", "Failed to put channel into confirm mode", err}
+		results <- &PublishFileResult{"", "Failed to put channel into confirm mode", err, true}
 		return
 	}
 
@@ -60,20 +61,40 @@ func PublishFiles(files []string, connectionUri, defaultContentType, exchange,
 		}
 
 		if message.Body, err = ioutil.ReadFile(file); err != nil {
-			results <- &PublishFileResult{file, "Failed to read file", err}
+			results <- &PublishFileResult{
+				file,
+				"Failed to read file",
+				err,
+				false,
+			}
 			continue
 		}
 
 		if err = channel.Publish(exchange, routingKey, mandatory, immediate, *message); err != nil {
-			results <- &PublishFileResult{file, "Failed to publish file", err}
+			results <- &PublishFileResult{
+				file,
+				"Failed to publish file",
+				err,
+				false,
+			}
 			continue
 		}
 
 		select {
 		case <-pubAcks:
-			results <- &PublishFileResult{file, "Successfully published file", nil}
+			results <- &PublishFileResult{
+				file,
+				"Successfully published file",
+				nil,
+				false,
+			}
 		case <-pubNacks:
-			results <- &PublishFileResult{file, "Received basic.nack for file", errors.New("'basic.nack'")}
+			results <- &PublishFileResult{
+				file,
+				"Received basic.nack for file",
+				errors.New("'basic.nack'"),
+				false,
+			}
 		}
 	}
 }

@@ -16,8 +16,7 @@ type ExitCodes int
 const (
 	Success              = 0
 	ArgumentParsingError = 1
-	ConnectionError      = 2
-	ChannelOpenError     = 3
+	FatalError           = 2
 )
 
 func getOptions() (options *Options) {
@@ -130,14 +129,10 @@ func main() {
 
 	for result := range resultChan {
 		if result.Error != nil {
-			switch result.Message {
-			case "Failed to connect":
+			if result.IsFatal {
 				log.Println("FATAL:", result.Message, result.Error)
-				os.Exit(ConnectionError)
-			case "Failed to get channel", "Failed to put channel into confirm mode":
-				log.Println("FATAL:", result.Message, result.Error)
-				os.Exit(ChannelOpenError)
-			default:
+				os.Exit(FatalError)
+			} else {
 				log.Println("ERROR:", result.Message, result.Filename, result.Error)
 			}
 		} else {
