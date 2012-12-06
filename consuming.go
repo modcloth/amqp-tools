@@ -36,7 +36,8 @@ func TailRabbitLogs(connectionUri string) {
 		return
 	}
 
-	logs, err := channel.Consume(queue.Name, "firehose-log-consumer", true, false, false, false, nil)
+	logs, err := channel.Consume(queue.Name, "firehose-log-consumer",
+		true, false, false, false, nil)
 	if err != nil {
 		log.Println("channel.consume:", err)
 		return
@@ -50,7 +51,8 @@ func TailRabbitLogs(connectionUri string) {
 		return
 	}
 
-	traces, err := channel.Consume(queue.Name, "firehose-trace-consumer", true, false, false, false, nil)
+	traces, err := channel.Consume(queue.Name, "firehose-trace-consumer",
+		true, false, false, false, nil)
 	if err != nil {
 		log.Println("channel.consume:", err)
 		return
@@ -58,14 +60,26 @@ func TailRabbitLogs(connectionUri string) {
 
 	log.Println("Consuming messages from amq.rabbitmq.trace")
 
+	channelCloses := channel.NotifyClose(make(chan *amqp.Error))
+
+	connCloses := conn.NotifyClose(make(chan *amqp.Error))
+
 	for {
 		select {
 		case entry := <-logs:
+			log.Println("received entry from logs")
 			fmt.Println(entry.Body)
 		case entry := <-traces:
+			log.Println("received entry from traces")
 			fmt.Println(entry.Body)
-		default:
-			break
+		case err := <-connCloses:
+			log.Println("received Connection close error")
+			fmt.Println("ERROR:", err)
+			return
+		case err := <-channelCloses:
+			log.Println("received channel close error")
+			fmt.Println("ERROR:", err)
+			return
 		}
 	}
 }
