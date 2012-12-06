@@ -2,130 +2,76 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 import (
-	"github.com/jteeuwen/go-pkg-optarg"
 	. "github.com/modcloth/amqp-tools"
 )
 
-type ExitCodes int
-
 const (
-	Success              = 0
-	ArgumentParsingError = 1
-	FatalError           = 2
+	SUCCESS           = 0
+	ARG_PARSING_ERROR = 1
+	FATAL_ERROR       = 86
+	PARTIAL_FAILURE   = 9
 )
 
-func getOptions() (options *Options) {
-	options = NewOptions()
+var (
+	amqpUri      = flag.String("U", "", "AMQP connection URI")
+	amqpUsername = flag.String("u", "guest", "AMQP username")
+	amqpPassword = flag.String("p", "guest", "AMQP password")
+	amqpHost     = flag.String("H", "localhost", "AMQP host")
+	amqpVHost    = flag.String("r", "", "AMQP vhost")
+	amqpPort     = flag.Int("P", 5672, "AMQP port")
 
-	optarg.UsageInfo = fmt.Sprintf(
-		"Usage: %s [options] [exchange] [file ...]:", os.Args[0])
+	routingKey = flag.String("k", "", "Publish message to routing key")
+	mandatory  = flag.Bool("m", false,
+		"Publish message with mandatory property set.")
+	immediate = flag.Bool("i", false,
+		"Publish message with immediate property set.")
+	contentType = flag.String("c", "",
+		"Default content type, else derived from file extension.")
 
-	optarg.Header("Executable options")
-	optarg.Add("h", "help", "Help", options.Help)
+	usageString = `Usage: %s [options] <exchange> <file> [file file ...]
 
-	optarg.Header("AMQP options")
-	optarg.Add("U", "uri", "AMQP connection URI", options.URI)
-	optarg.Add("u", "username", "AMQP username", options.Username)
-	optarg.Add("p", "password", "AMQP password", options.Password)
-	optarg.Add("H", "host", "AMQP host", options.Host)
-	optarg.Add("r", "vhost", "AMQP vhost", options.VHost)
-	optarg.Add("P", "port", "AMQP port", options.Port)
+Publishes files as messages to a given exchange.  If there is only a single
+filename entry and it is "-", then file names will be read from standard
+input assuming entries delimited by at least a line feed ("\n").  Any extra
+whitespace in each entry will be stripped before attempting to open the file.
 
-	optarg.Header("Message options")
-	optarg.Add("k", "routingkey", "Routing key", options.RoutingKey)
-	optarg.Add("m", "mandatory", "Mandatory", options.Mandatory)
-	optarg.Add("i", "immediate", "Immediate", options.Immediate)
-	optarg.Add("c", "contenttype", "Content-type", options.ContentType)
-
-	for opt := range optarg.Parse() {
-		switch opt.Name {
-		case "uri":
-			options.URI = opt.String()
-		case "username":
-			options.Username = opt.String()
-		case "password":
-			options.Password = opt.String()
-		case "help":
-			options.Help = opt.Bool()
-		case "host":
-			options.Host = opt.String()
-		case "vhost":
-			options.VHost = opt.String()
-		case "port":
-			options.Port = opt.Int()
-		case "routingkey":
-			options.RoutingKey = opt.String()
-		case "mandatory":
-			options.Mandatory = opt.Bool()
-		case "immediate":
-			options.Immediate = opt.Bool()
-		case "contenttype":
-			options.ContentType = opt.String()
-		}
-	}
-
-	if options.Help {
-		fmt.Println(optarg.UsageString())
-		os.Exit(Success)
-	}
-
-	if len(optarg.Remainder) < 2 {
-		fmt.Printf("Not enough arguments\n%s", optarg.UsageString())
-		os.Exit(ArgumentParsingError)
-	}
-
-	options.Exchange = optarg.Remainder[0]
-	options.Files = optarg.Remainder[1:]
-
-	return
-}
-
-type Options struct {
-	Help bool
-
-	URI      string
-	Username string
-	Password string
-	Host     string
-	VHost    string
-	Port     int
-
-	RoutingKey  string
-	Mandatory   bool
-	Immediate   bool
-	ContentType string
-
-	Exchange string
-	Files    []string
-}
-
-func NewOptions() *Options {
-	return &Options{
-		URI:      "",
-		Username: "guest",
-		Password: "guest",
-		Host:     "localhost",
-		Port:     5672,
-	}
-}
+`
+)
 
 func main() {
-	var options *Options
+	hadError := false
 
-	options = getOptions()
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, usageString, filepath.Base(os.Args[0]))
+		flag.PrintDefaults()
+	}
 
-	connectionUri := options.URI
+	flag.Parse()
+
+	if flag.NArg() < 2 {
+		fmt.Fprintf(os.Stderr,
+			"ERROR: The exchange name and a list of file names are required\n")
+		flag.Usage()
+		os.Exit(ARG_PARSING_ERROR)
+	}
+
+	exchange := flag.Arg(0)
+	files := flag.Args()[1:flag.NArg()]
+
+	connectionUri := *amqpUri
 	if len(connectionUri) < 1 {
-		connectionUri = fmt.Sprintf("amqp://%s:%s@%s:%d/%s", options.Username,
-			options.Password, options.Host, options.Port, options.VHost)
+		connectionUri = fmt.Sprintf("amqp://%s:%s@%s:%d/%s", *amqpUsername,
+			*amqpPassword, *amqpHost, *amqpPort, *amqpVHost)
 	}
 
 	fileChan := make(chan string)
@@ -134,7 +80,7 @@ func main() {
 	go func() {
 		defer close(fileChan)
 
-		if len(options.Files) == 1 && options.Files[0] == "-" {
+		if len(files) == 1 && files[0] == "-" {
 			log.Println("Reading files from stdin")
 			stdin := bufio.NewReader(os.Stdin)
 			for {
@@ -149,27 +95,33 @@ func main() {
 			}
 		} else {
 			log.Println("Using files provided on command line")
-			for _, file := range options.Files {
+			for _, file := range files {
 				fileChan <- file
 			}
 		}
 	}()
 
-	go PublishFiles(fileChan, connectionUri, options.ContentType,
-		options.Exchange, options.RoutingKey, options.Mandatory,
-		options.Immediate, resultChan)
+	go PublishFiles(fileChan, connectionUri, *contentType, exchange,
+		*routingKey, *mandatory, *immediate, resultChan)
 
 	for result := range resultChan {
 		if result.Error != nil {
 			if result.IsFatal {
 				log.Println("FATAL:", result.Message, result.Error)
-				os.Exit(FatalError)
+				os.Exit(FATAL_ERROR)
 			} else {
 				log.Println("ERROR:", result.Message,
 					result.Filename, result.Error)
+				hadError = true
 			}
 		} else {
 			log.Println(result.Message, result.Filename)
 		}
+	}
+
+	if hadError {
+		os.Exit(PARTIAL_FAILURE)
+	} else {
+		os.Exit(SUCCESS)
 	}
 }
