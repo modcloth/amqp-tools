@@ -1,4 +1,6 @@
-TARGETS := \
+BIBLIOTECAS := \
+  github.com/modcloth/amqp-tools
+OBJETIVOS := \
   github.com/modcloth/amqp-tools \
   github.com/modcloth/amqp-tools/amqp-publish-files \
   github.com/modcloth/amqp-tools/amqp-consume
@@ -6,12 +8,12 @@ TARGETS := \
 all: build test
 
 build: deps
-	go install -x $(TARGETS)
+	go install -x $(OBJETIVOS)
 
 test:
-	go test -x -v $(TARGETS)
+	go test -x -v $(BIBLIOTECAS)
 
 deps:
-	go get -x $(TARGETS)
+	go get -x $(OBJETIVOS)
 
 .PHONY: all build deps test
