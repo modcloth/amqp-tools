@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 )
 
 import (
@@ -11,6 +12,9 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const NOT_COOL_ZEUS = 86
+
+var queueBindings QueueBindings
 var (
 	uri = flag.String("U",
 		"amqp://guest:guest@localhost:5672", "AMQP Connection URI")
@@ -20,6 +24,9 @@ var (
 )
 
 func main() {
+	flag.Var(&queueBindings, "q", "Queue bindings specified as "+
+		"\"/\"-delimited strings of the form "+
+		"\"exchange/queue-name/routing-key\"")
 	flag.Parse()
 
 	deliveries := make(chan amqp.Delivery)
@@ -34,5 +41,16 @@ func main() {
 		for delivery := range deliveries {
 			fmt.Printf("%s: %s", delivery.Exchange, string(delivery.Body))
 		}
+	} else if len(queueBindings) > 0 {
+		go ConsumeForBindings(*uri, queueBindings, deliveries, *debug)
+
+		for delivery := range deliveries {
+			fmt.Printf("%s: %s\n", delivery.Exchange, string(delivery.Body))
+		}
+	} else {
+		fmt.Println("ERROR: You must either consume rabbitmq logs or " +
+			"define at least one exchange/queue/binding argument.")
+		flag.Usage()
+		os.Exit(NOT_COOL_ZEUS)
 	}
 }

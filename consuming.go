@@ -1,15 +1,121 @@
 package amqptools
 
 import (
+	"errors"
+	"fmt"
 	"log"
+	"strings"
 )
 
 import (
 	"github.com/streadway/amqp"
 )
 
+type QueueBinding struct {
+	QueueName  string
+	RoutingKey string
+	Exchange   string
+
+	NoWait bool
+	Args   amqp.Table
+}
+
+type QueueBindings []*QueueBinding
+
+func (qb *QueueBindings) String() string {
+	return fmt.Sprint(*qb)
+}
+
+func (qb *QueueBindings) Set(value string) error {
+	qbparts := strings.Split(value, "/")
+	if len(qbparts) != 3 {
+		return errors.New("Queue Binding argument requires exchange, " +
+			"queue name and routing key and NOTHING else!")
+	}
+	newBinding := &QueueBinding{
+		Exchange:   qbparts[0],
+		QueueName:  qbparts[1],
+		RoutingKey: qbparts[2],
+		NoWait:     false,
+		Args:       nil,
+	}
+	*qb = append(*qb, newBinding)
+	return nil
+}
+
+type consumerChannel struct {
+	deliveries <-chan amqp.Delivery
+	binding    *QueueBinding
+}
+
+func ConsumeForBindings(connectionUri string, bindings QueueBindings,
+	deliveries chan amqp.Delivery, debug bool) {
+
+	defer close(deliveries)
+
+	conn, err := amqp.Dial(connectionUri)
+	if err != nil {
+		if debug {
+			log.Println("connection.open:", err)
+		}
+		return
+	}
+
+	defer conn.Close()
+
+	channel, err := conn.Channel()
+	if err != nil {
+		if debug {
+			log.Println("channel.open:", err)
+		}
+		return
+	}
+
+	var consumerChannels []consumerChannel
+
+	for _, binding := range bindings {
+		queue, err := channel.QueueDeclare(binding.QueueName, false, true, false, false, nil)
+		if err != nil {
+			if debug {
+				log.Println("channel.queue_declare:", err)
+			}
+			return
+		}
+
+		err = channel.QueueBind(queue.Name, binding.RoutingKey, binding.Exchange, false, nil)
+		if err != nil {
+			if debug {
+				log.Println("channel.queuebind", err)
+			}
+			return
+		}
+
+		consumerChan, err := channel.Consume(queue.Name, "", true, false, false, false, nil)
+		if err != nil {
+			if debug {
+				log.Println("channel.consume", err)
+			}
+			return
+		}
+
+		consumerChannels = append(consumerChannels,
+			consumerChannel{consumerChan, binding})
+	}
+
+	for {
+		for _, ch := range consumerChannels {
+			select {
+			case delivery := <-ch.deliveries:
+				deliveries <- delivery
+			}
+		}
+	}
+}
+
 func TailRabbitLogs(connectionUri string, deliveries chan amqp.Delivery,
 	debug bool) {
+
+	defer close(deliveries)
 
 	conn, err := amqp.Dial(connectionUri)
 	if err != nil {
@@ -78,8 +184,6 @@ func TailRabbitLogs(connectionUri string, deliveries chan amqp.Delivery,
 	if debug {
 		log.Println("Consuming messages from amq.rabbitmq.trace")
 	}
-
-	defer close(deliveries)
 
 	channelCloses := channel.NotifyClose(make(chan *amqp.Error))
 	connCloses := conn.NotifyClose(make(chan *amqp.Error))
