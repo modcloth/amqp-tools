@@ -12,7 +12,20 @@ import (
 	"github.com/streadway/amqp"
 )
 
-const NOT_COOL_ZEUS = 86
+const (
+	NOT_COOL_ZEUS = 86
+	CONSUME_CAT   = `
+
+    Ack      /\-/\
+            /a a  \              _
+           =\ Y  =/-~~~~~~-,____/ )
+             '^--'          _____/
+               \           /
+               ||  |---'\  \
+              (_(__|   ((__|
+
+`
+)
 
 var queueBindings QueueBindings
 var (
@@ -20,7 +33,8 @@ var (
 		"amqp://guest:guest@localhost:5672", "AMQP Connection URI")
 	rabbitmqLogs = flag.Bool("rabbitmq.logs",
 		false, "Consume from amq.rabbitmq.logs and amq.rabbitmq.trace")
-	debug = flag.Bool("debug", false, "Show debug output")
+	debug   = flag.Bool("debug", false, "Show debug output")
+	showCat = flag.Bool("mrow", false, "")
 )
 
 func main() {
@@ -28,6 +42,10 @@ func main() {
 		"\"/\"-delimited strings of the form "+
 		"\"exchange/queue-name/routing-key\"")
 	flag.Parse()
+	if *showCat {
+		fmt.Println(CONSUME_CAT)
+		return
+	}
 
 	deliveries := make(chan amqp.Delivery)
 
