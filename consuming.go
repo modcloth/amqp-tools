@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -15,6 +16,7 @@ type QueueBinding struct {
 	QueueName  string
 	RoutingKey string
 	Exchange   string
+	parts      []string
 
 	NoWait bool
 	Args   amqp.Table
@@ -24,6 +26,22 @@ type QueueBindings []*QueueBinding
 
 func (qb *QueueBindings) String() string {
 	return fmt.Sprint(*qb)
+}
+
+func (qb *QueueBinding) String() string {
+	ret := ""
+	lastIndex := len(qb.parts) - 1
+	for index, part := range qb.parts {
+		if len(part) == 0 {
+			ret += "_"
+		} else {
+			ret += part
+		}
+		if index != lastIndex {
+			ret += string(os.PathSeparator)
+		}
+	}
+	return ret
 }
 
 func (qb *QueueBindings) Set(value string) error {
@@ -36,6 +54,7 @@ func (qb *QueueBindings) Set(value string) error {
 		Exchange:   qbparts[0],
 		QueueName:  qbparts[1],
 		RoutingKey: qbparts[2],
+		parts:      qbparts,
 		NoWait:     false,
 		Args:       nil,
 	}
