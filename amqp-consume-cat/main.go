@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 )
@@ -45,34 +44,8 @@ var (
 	debug     = flag.Bool("debug", false, "Show debug output")
 	showCat   = flag.Bool("mrow", false, "")
 	outputDir = flag.String("d", "", "Output directory for messages. If not specified, output will go to stdout.")
+	debugger  = &Debugger{}
 )
-
-func debugPrint(message string) {
-	if *debug {
-		log.Println(message)
-	}
-}
-
-func debugFatal(err error, message string) {
-	if err != nil {
-		debugPrint(message)
-		os.Exit(1)
-	}
-}
-
-func debugError(err error, message string) {
-	if err != nil {
-		debugPrint(message)
-	}
-}
-
-func debugHasError(err error, message string) bool {
-	if err != nil {
-		debugPrint(message)
-		return true
-	}
-	return false
-}
 
 func deliver(delivery amqp.Delivery) {
 	if len(*outputDir) == 0 {
@@ -83,7 +56,7 @@ func deliver(delivery amqp.Delivery) {
 			string(delivery.Body),
 		}
 		jsonBytes, err := json.MarshalIndent(deliveryPlus, "\t", "\t")
-		if debugHasError(err, "Unable to marshall delivery into JSON.") {
+		if debugger.WithError(err, "Unable to marshall delivery into JSON.") {
 			return
 		}
 
@@ -113,28 +86,29 @@ func deliver(delivery amqp.Delivery) {
 		fileName := fmt.Sprintf("%s%smessage.json", fullPath, string(os.PathSeparator))
 
 		err = os.MkdirAll(fullPath, os.ModeDir|os.ModePerm)
-		if debugHasError(err, fmt.Sprintf("Unable to create output directory '%s'.", fullPath)) {
+		if debugger.WithError(err, fmt.Sprintf("Unable to create output directory '%s'.", fullPath)) {
 			return
 		}
 
 		file, err := os.Create(fileName)
-		if debugHasError(err, fmt.Sprintf("Unable to create file '%s'.", fileName)) {
+		if debugger.WithError(err, fmt.Sprintf("Unable to create file '%s'.", fileName)) {
 			return
 		}
 
 		_, err = file.Write(jsonBytes)
-		if debugHasError(err, fmt.Sprintf("Unable to write data into buffer for '%s'.", fileName)) {
+		if debugger.WithError(err, fmt.Sprintf("Unable to write data into buffer for '%s'.", fileName)) {
 			return
 		} else {
-			debugPrint(fmt.Sprintf("Data written to %s", fileName))
+			debugger.Print(fmt.Sprintf("Data written to %s", fileName))
 		}
 
 		err = file.Close()
-		debugError(err, fmt.Sprintf("Unable to close file '%s'.", fileName))
+		debugger.WithError(err, fmt.Sprintf("Unable to close file '%s'.", fileName))
 	}
 }
 
 func main() {
+	debugger.SetDebugOn(*debug)
 	flag.Var(&queueBindings, "q", "Queue bindings specified as "+
 		"\"/\"-delimited strings of the form "+
 		"\"exchange/queue-name/routing-key\"")
@@ -147,7 +121,7 @@ func main() {
 	deliveries := make(chan amqp.Delivery)
 
 	if *rabbitmqLogs {
-		debugPrint("Tailing RabbitMQ Logs")
+		debugger.Print("Tailing RabbitMQ Logs")
 
 		go TailRabbitLogs(*uri, deliveries, *debug)
 
@@ -156,7 +130,7 @@ func main() {
 		}
 	} else if len(queueBindings) > 0 {
 		for _, binding := range queueBindings {
-			debugPrint(fmt.Sprintf("Binding to %s", binding))
+			debugger.Print(fmt.Sprintf("Binding to %s", binding))
 		}
 		go ConsumeForBindings(*uri, queueBindings, deliveries, *debug)
 
