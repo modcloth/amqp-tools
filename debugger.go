@@ -21,23 +21,23 @@ func (d *Debugger) SetDebugOn(val bool) {
 	d.debugOn = val
 }
 
-func (d *Debugger) Print(message string) {
+func (d *Debugger) Print(message ...interface{}) {
 	if d.debugOn {
-		log.Println(message)
+		log.Println(message...)
 	}
 }
 
-func (d *Debugger) WithError(err error, message string) bool {
+func (d *Debugger) WithError(err error, message ...interface{}) bool {
 	if err != nil {
-		d.Print(message)
+		d.Print(message...)
 		return true
 	}
 	return false
 }
 
-func (d *Debugger) Fatal(err error, message string) {
+func (d *Debugger) Fatal(err error, message ...interface{}) {
 	if err != nil {
-		d.Print(message)
+		d.Print(message...)
 		os.Exit(1)
 	}
 }
