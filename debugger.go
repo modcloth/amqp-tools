@@ -6,23 +6,23 @@ import (
 )
 
 type Debugger struct {
-	debugOn bool
+	on bool
 }
 
-func (d *Debugger) DebugOn() {
-	d.debugOn = true
+func (d *Debugger) On() {
+	d.on = true
 }
 
-func (d *Debugger) DebugOff() {
-	d.debugOn = false
+func (d *Debugger) Off() {
+	d.on = false
 }
 
-func (d *Debugger) SetDebugOn(val bool) {
-	d.debugOn = val
+func (d *Debugger) SetDebug(val bool) {
+	d.on = val
 }
 
 func (d *Debugger) Print(message ...interface{}) {
-	if d.debugOn {
+	if d.on {
 		log.Println(message...)
 	}
 }
