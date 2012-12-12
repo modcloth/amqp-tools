@@ -108,7 +108,6 @@ func deliver(delivery amqp.Delivery) {
 }
 
 func main() {
-	debugger.SetDebugOn(*debug)
 	flag.Var(&queueBindings, "q", "Queue bindings specified as "+
 		"\"/\"-delimited strings of the form "+
 		"\"exchange/queue-name/routing-key\"")
@@ -117,25 +116,34 @@ func main() {
 		fmt.Println(CONSUME_CAT)
 		return
 	}
+	debugger.SetDebug(*debug)
 
+	quit := make(chan bool)
 	deliveries := make(chan amqp.Delivery)
 
-	if *rabbitmqLogs {
-		debugger.Print("Tailing RabbitMQ Logs")
+	if *rabbitmqLogs || len(queueBindings) > 0 {
+		if *rabbitmqLogs {
+			debugger.Print("Tailing RabbitMQ Logs")
 
-		go TailRabbitLogs(*uri, deliveries, debugger)
+			go TailRabbitLogs(*uri, deliveries, debugger)
 
-		for delivery := range deliveries {
-			deliver(delivery)
+			go func() {
+				for delivery := range deliveries {
+					deliver(delivery)
+				}
+			}()
 		}
-	} else if len(queueBindings) > 0 {
-		for _, binding := range queueBindings {
-			debugger.Print(fmt.Sprintf("Binding to %s", binding))
-		}
-		go ConsumeForBindings(*uri, queueBindings, deliveries, debugger)
+		if len(queueBindings) > 0 {
+			for _, binding := range queueBindings {
+				debugger.Print(fmt.Sprintf("Binding to %s", binding))
+			}
+			go ConsumeForBindings(*uri, queueBindings, deliveries, debugger)
 
-		for delivery := range deliveries {
-			deliver(delivery)
+			go func() {
+				for delivery := range deliveries {
+					deliver(delivery)
+				}
+			}()
 		}
 	} else {
 		fmt.Println("ERROR: You must either consume rabbitmq logs or " +
@@ -143,4 +151,5 @@ func main() {
 		flag.Usage()
 		os.Exit(NOT_COOL_ZEUS)
 	}
+	<-quit
 }
