@@ -123,7 +123,7 @@ func main() {
 	if *rabbitmqLogs {
 		debugger.Print("Tailing RabbitMQ Logs")
 
-		go TailRabbitLogs(*uri, deliveries, *debug)
+		go TailRabbitLogs(*uri, deliveries, debugger)
 
 		for delivery := range deliveries {
 			deliver(delivery)
@@ -132,7 +132,7 @@ func main() {
 		for _, binding := range queueBindings {
 			debugger.Print(fmt.Sprintf("Binding to %s", binding))
 		}
-		go ConsumeForBindings(*uri, queueBindings, deliveries, *debug)
+		go ConsumeForBindings(*uri, queueBindings, deliveries, debugger)
 
 		for delivery := range deliveries {
 			deliver(delivery)

@@ -3,7 +3,6 @@ package amqptools
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 )
@@ -68,25 +67,19 @@ type consumerChannel struct {
 }
 
 func ConsumeForBindings(connectionUri string, bindings QueueBindings,
-	deliveries chan amqp.Delivery, debug bool) {
+	deliveries chan amqp.Delivery, debugger *Debugger) {
 
 	defer close(deliveries)
 
 	conn, err := amqp.Dial(connectionUri)
-	if err != nil {
-		if debug {
-			log.Println("connection.open:", err)
-		}
+	if debugger.WithError(err, "connection.open:", err) {
 		return
 	}
 
 	defer conn.Close()
 
 	channel, err := conn.Channel()
-	if err != nil {
-		if debug {
-			log.Println("channel.open:", err)
-		}
+	if debugger.WithError(err, "connection.open:", err) {
 		return
 	}
 
@@ -94,31 +87,21 @@ func ConsumeForBindings(connectionUri string, bindings QueueBindings,
 
 	for _, binding := range bindings {
 		queue, err := channel.QueueDeclare(binding.QueueName, false, true, false, false, nil)
-		if err != nil {
-			if debug {
-				log.Println("channel.queue_declare:", err)
-			}
+		if debugger.WithError(err, "channel.queue_declare:", err) {
 			return
 		}
 
 		err = channel.QueueBind(queue.Name, binding.RoutingKey, binding.Exchange, false, nil)
-		if err != nil {
-			if debug {
-				log.Println("channel.queuebind", err)
-			}
+		if debugger.WithError(err, "channel.queuebind", err) {
 			return
 		}
 
 		consumerChan, err := channel.Consume(queue.Name, "", true, false, false, false, nil)
-		if err != nil {
-			if debug {
-				log.Println("channel.consume", err)
-			}
+		if debugger.WithError(err, "channel.consume", err) {
 			return
 		}
 
-		consumerChannels = append(consumerChannels,
-			consumerChannel{consumerChan, binding})
+		consumerChannels = append(consumerChannels, consumerChannel{consumerChan, binding})
 	}
 
 	for {
@@ -131,78 +114,52 @@ func ConsumeForBindings(connectionUri string, bindings QueueBindings,
 	}
 }
 
-func TailRabbitLogs(connectionUri string, deliveries chan amqp.Delivery,
-	debug bool) {
+func TailRabbitLogs(connectionUri string, deliveries chan amqp.Delivery, debugger *Debugger) {
 
 	defer close(deliveries)
 
 	conn, err := amqp.Dial(connectionUri)
-	if err != nil {
-		if debug {
-			log.Println("connection.open:", err)
-		}
+	if debugger.WithError(err, "connection.open:", err) {
 		return
 	}
 
 	defer conn.Close()
 
 	channel, err := conn.Channel()
-	if err != nil {
-		if debug {
-			log.Println("channel.open:", err)
-		}
+	if debugger.WithError(err, "channel.open:", err) {
 		return
 	}
 
 	queue, err := channel.QueueDeclare("", false, true, false, false, nil)
-	if err != nil {
-		if debug {
-			log.Println("channel.queue_declare:", err)
-		}
+	if debugger.WithError(err, "channel.queue_declare:", err) {
 		return
 	}
 
 	err = channel.QueueBind(queue.Name, "#", "amq.rabbitmq.log", false, nil)
-	if err != nil {
-		if debug {
-			log.Println("channel.queue_bind:", err)
-		}
+	if debugger.WithError(err, "channel.queue_bind:", err) {
 		return
 	}
 
 	logs, err := channel.Consume(queue.Name, "firehose-log-consumer",
 		true, false, false, false, nil)
-	if err != nil {
-		if debug {
-			log.Println("channel.consume:", err)
-		}
+	if debugger.WithError(err, "channel.consume", err) {
 		return
 	}
 
-	if debug {
-		log.Println("Consuming messages from amq.rabbitmq.log")
-	}
+	debugger.Print("Consuming messages from amq.rabbitmq.log")
 
 	err = channel.QueueBind(queue.Name, "#", "amq.rabbitmq.trace", false, nil)
-	if err != nil {
-		if debug {
-			log.Println("channel.queue_bind:", err)
-		}
+	if debugger.WithError(err, "channel.queue_bind:", err) {
 		return
 	}
 
 	traces, err := channel.Consume(queue.Name, "firehose-trace-consumer",
 		true, false, false, false, nil)
-	if err != nil {
-		if debug {
-			log.Println("channel.consume:", err)
-		}
+	if debugger.WithError(err, "channel.consume:", err) {
 		return
 	}
 
-	if debug {
-		log.Println("Consuming messages from amq.rabbitmq.trace")
-	}
+	debugger.Print("Consuming messages from amq.rabbitmq.trace")
 
 	channelCloses := channel.NotifyClose(make(chan *amqp.Error))
 	connCloses := conn.NotifyClose(make(chan *amqp.Error))
@@ -214,14 +171,10 @@ func TailRabbitLogs(connectionUri string, deliveries chan amqp.Delivery,
 		case entry := <-traces:
 			deliveries <- entry
 		case err := <-connCloses:
-			if debug {
-				log.Println("received Connection close error:", err)
-			}
+			debugger.Print("received Connection close error:", err)
 			return
 		case err := <-channelCloses:
-			if debug {
-				log.Println("received channel close error:", err)
-			}
+			debugger.Print("received channel close error:", err)
 			return
 		}
 	}
