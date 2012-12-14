@@ -23,20 +23,20 @@ const (
 )
 
 var (
-	amqpUri      = flag.String("U", "", "AMQP connection URI")
-	amqpUsername = flag.String("u", "guest", "AMQP username")
-	amqpPassword = flag.String("p", "guest", "AMQP password")
-	amqpHost     = flag.String("H", "localhost", "AMQP host")
-	amqpVHost    = flag.String("r", "", "AMQP vhost")
-	amqpPort     = flag.Int("P", 5672, "AMQP port")
+	amqpUri      = flag.String("uri", "", "AMQP connection URI")
+	amqpUsername = flag.String("user", "guest", "AMQP username")
+	amqpPassword = flag.String("password", "guest", "AMQP password")
+	amqpHost     = flag.String("host", "localhost", "AMQP host")
+	amqpVHost    = flag.String("vhost", "", "AMQP vhost")
+	amqpPort     = flag.Int("port", 5672, "AMQP port")
 
-	routingKey = flag.String("k", "", "Publish message to routing key")
-	mandatory  = flag.Bool("m", false,
+	routingKey = flag.String("routing-key", "", "Publish message to routing key")
+	mandatory  = flag.Bool("mandatory", false,
 		"Publish message with mandatory property set.")
-	immediate = flag.Bool("i", false,
+	immediate = flag.Bool("immediate", false,
 		"Publish message with immediate property set.")
-	contentType = flag.String("c", "",
-		"Default content type, else derived from file extension.")
+	contentType = flag.String("content-type", "",
+		"Content-type, else derived from file extension.")
 
 	usageString = `Usage: %s [options] <exchange> <file> [file file ...]
 
