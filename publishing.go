@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"mime"
 	"path/filepath"
-	"time"
 )
 
 import (
@@ -20,8 +19,8 @@ type PublishFileResult struct {
 	IsFatal  bool
 }
 
-func PublishFiles(files chan string, connectionUri, defaultContentType, exchange,
-	routingKey string, mandatory, immediate bool, results chan *PublishFileResult) {
+func PublishFiles(files chan string, connectionUri, exchange,
+	routingKey string, mandatory, immediate bool, deliveryProperties DeliveryProperties, results chan *PublishFileResult) {
 
 	var err error
 	var conn *amqp.Connection
@@ -55,12 +54,7 @@ func PublishFiles(files chan string, connectionUri, defaultContentType, exchange
 		return
 	}
 
-	message = &amqp.Publishing{
-		DeliveryMode: amqp.Persistent,
-		Timestamp:    time.Now(),
-		ContentType:  defaultContentType,
-		Body:         make([]byte, 0),
-	}
+	message = NewAmqpPublishingWithDelivery(deliveryProperties)
 
 	for file := range files {
 		if message.ContentType == "" {

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 import (
@@ -23,20 +24,19 @@ const (
 )
 
 var (
-	amqpUri      = flag.String("uri", "", "AMQP connection URI")
-	amqpUsername = flag.String("user", "guest", "AMQP username")
-	amqpPassword = flag.String("password", "guest", "AMQP password")
-	amqpHost     = flag.String("host", "localhost", "AMQP host")
-	amqpVHost    = flag.String("vhost", "", "AMQP vhost")
-	amqpPort     = flag.Int("port", 5672, "AMQP port")
+	deliveryProperties *DeliveryPropertiesHolder = new(DeliveryPropertiesHolder)
+	amqpUri                                      = flag.String("uri", "", "AMQP connection URI")
+	amqpUsername                                 = flag.String("user", "guest", "AMQP username")
+	amqpPassword                                 = flag.String("password", "guest", "AMQP password")
+	amqpHost                                     = flag.String("host", "localhost", "AMQP host")
+	amqpVHost                                    = flag.String("vhost", "", "AMQP vhost")
+	amqpPort                                     = flag.Int("port", 5672, "AMQP port")
 
 	routingKey = flag.String("routing-key", "", "Publish message to routing key")
 	mandatory  = flag.Bool("mandatory", false,
 		"Publish message with mandatory property set.")
 	immediate = flag.Bool("immediate", false,
 		"Publish message with immediate property set.")
-	contentType = flag.String("content-type", "",
-		"Content-type, else derived from file extension.")
 
 	usageString = `Usage: %s [options] <exchange> <file> [file file ...]
 
@@ -47,6 +47,47 @@ whitespace in each entry will be stripped before attempting to open the file.
 
 `
 )
+
+func init() {
+	deliveryProperties.ContentType = flag.String("content-type", "",
+		"Content-type, else derived from file extension.")
+	deliveryProperties.ContentEncoding = flag.String("content-encoding", "UTF-8",
+		"Mime content-encoding.")
+	deliveryProperties.DeliveryMode = flag.Uint("delivery-mode", 1,
+		"Delivery mode (1 for non-persistent, 2 for persistent.")
+	deliveryProperties.Priority = flag.Uint("priority", 0, "queue implementation use - 0 to 9")
+	deliveryProperties.ReplyTo = flag.String("replyto", "", "application use - address to to reply to (ex: rpc)")
+	deliveryProperties.Expiration = flag.String("expiration", "", "implementation use - message expiration spec")
+	deliveryProperties.Timestamp = flag.Int64("timestamp", time.Now().Unix(), "unix timestamp of message")
+	deliveryProperties.Type = flag.String("type", "", "application use - message type name")
+	deliveryProperties.UserId = flag.String("userid", "", "application use - creating user - should be authenticated user")
+	deliveryProperties.AppId = flag.String("appid", "", "application use - creating application id")
+
+	flag.Var(&deliveryProperties.CorrelationIdGenerator, "correlationid", "'series' for incrementing ids")
+	flag.Var(&deliveryProperties.MessageIdGenerator, "messageid", "'series' for incrementing ids")
+}
+
+type NexterWrapper struct{ nexter Nexter }
+
+func (nw *NexterWrapper) Next() string {
+	if nw.nexter == nil {
+		nw.nexter = new(SeriesProvider)
+	}
+	return nw.nexter.Next()
+}
+func (nw *NexterWrapper) String() string { return "series" }
+func (nw *NexterWrapper) Set(arg string) error {
+	switch arg {
+	case "series":
+		nw.nexter = new(SeriesProvider)
+	default:
+		nw.nexter = &StaticProvider{
+			Value: arg,
+		}
+	}
+
+	return nil
+}
 
 func main() {
 	hadError := false
@@ -101,8 +142,8 @@ func main() {
 		}
 	}()
 
-	go PublishFiles(fileChan, connectionUri, *contentType, exchange,
-		*routingKey, *mandatory, *immediate, resultChan)
+	go PublishFiles(fileChan, connectionUri, exchange, *routingKey,
+		*mandatory, *immediate, deliveryProperties, resultChan)
 
 	for result := range resultChan {
 		if result.Error != nil {
