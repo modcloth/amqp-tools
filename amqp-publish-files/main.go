@@ -85,7 +85,6 @@ func (nw *NexterWrapper) Set(arg string) error {
 			Value: arg,
 		}
 	}
-
 	return nil
 }
 
