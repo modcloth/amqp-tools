@@ -1,5 +1,7 @@
 package amqptools
 
+import "strconv"
+
 type Nexter interface {
 	Next() string
 }
@@ -18,5 +20,5 @@ func (sp *StaticProvider) Next() string {
 
 func (sp *SeriesProvider) Next() string {
 	sp.current++
-	return string(sp.current)
+	return strconv.FormatInt(int64(sp.current), 10)
 }

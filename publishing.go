@@ -54,9 +54,8 @@ func PublishFiles(files chan string, connectionUri, exchange,
 		return
 	}
 
-	message = NewAmqpPublishingWithDelivery(deliveryProperties)
-
 	for file := range files {
+		message = NewAmqpPublishingWithDelivery(deliveryProperties)
 		if message.ContentType == "" {
 			message.ContentType = mime.TypeByExtension(filepath.Ext(file))
 		}
