@@ -63,21 +63,27 @@ func init() {
 	deliveryProperties.UserId = flag.String("userid", "", "application use - creating user - should be authenticated user")
 	deliveryProperties.AppId = flag.String("appid", "", "application use - creating application id")
 
-	flag.Var(&deliveryProperties.CorrelationIdGenerator, "correlationid", "'series' for incrementing ids")
-	flag.Var(&deliveryProperties.MessageIdGenerator, "messageid", "'series' for incrementing ids")
+	flag.Var(&deliveryProperties.CorrelationIdGenerator,
+		"correlationid",
+		"'series' for incrementing ids, 'uuid' for UUIDs, static value otherwise")
+	flag.Var(&deliveryProperties.MessageIdGenerator,
+		"messageid",
+		"'series' for incrementing ids, 'uuid' for UUIDs, static value otherwise")
 }
 
 type NexterWrapper struct{ nexter Nexter }
 
 func (nw *NexterWrapper) Next() (string, error) {
 	if nw.nexter == nil {
-		nw.nexter = new(SeriesProvider)
+		nw.nexter = new(UUIDProvider)
 	}
 	return nw.nexter.Next()
 }
-func (nw *NexterWrapper) String() string { return "series" }
+func (nw *NexterWrapper) String() string { return "uuid" }
 func (nw *NexterWrapper) Set(arg string) error {
 	switch arg {
+	case "uuid":
+		nw.nexter = new(UUIDProvider)
 	case "series":
 		nw.nexter = new(SeriesProvider)
 	default:
