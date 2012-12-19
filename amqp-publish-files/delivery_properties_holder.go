@@ -24,12 +24,24 @@ func (dph *DeliveryPropertiesHolder) GetContentEncoding() string { return *dph.C
 func (dph *DeliveryPropertiesHolder) GetDeliveryMode() uint8     { return uint8(*dph.DeliveryMode) }
 func (dph *DeliveryPropertiesHolder) GetPriority() uint8         { return uint8(*dph.Priority) }
 func (dph *DeliveryPropertiesHolder) GetCorrelationId() string {
-	return dph.CorrelationIdGenerator.Next()
+  result, err := dph.CorrelationIdGenerator.Next()
+
+  if err != nil {
+	panic(err)
+  }
+
+  return result
 }
 func (dph *DeliveryPropertiesHolder) GetReplyTo() string    { return *dph.ReplyTo }
 func (dph *DeliveryPropertiesHolder) GetExpiration() string { return *dph.Expiration }
 func (dph *DeliveryPropertiesHolder) GetMessageId() string {
-	return dph.MessageIdGenerator.Next()
+  result, err := dph.CorrelationIdGenerator.Next()
+
+  if err != nil {
+	panic(err)
+  }
+
+  return result
 }
 func (dph *DeliveryPropertiesHolder) GetTimestamp() time.Time {
 	return time.Unix(*dph.Timestamp, 0)

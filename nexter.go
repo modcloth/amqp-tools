@@ -1,9 +1,12 @@
 package amqptools
 
-import "strconv"
+import (
+	"strconv"
+)
+
 
 type Nexter interface {
-	Next() string
+	Next() (string, error)
 }
 
 type SeriesProvider struct {
@@ -14,11 +17,14 @@ type StaticProvider struct {
 	Value string
 }
 
-func (sp *StaticProvider) Next() string {
-	return sp.Value
+
+func (sp *StaticProvider) Next() (string, error) {
+	return sp.Value, nil
 }
 
-func (sp *SeriesProvider) Next() string {
+func (sp *SeriesProvider) Next() (string, error) {
 	sp.current++
-	return strconv.FormatInt(int64(sp.current), 10)
+	return strconv.FormatInt(int64(sp.current), 10), nil
+}
+
 }

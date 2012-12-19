@@ -69,7 +69,7 @@ func init() {
 
 type NexterWrapper struct{ nexter Nexter }
 
-func (nw *NexterWrapper) Next() string {
+func (nw *NexterWrapper) Next() (string, error) {
 	if nw.nexter == nil {
 		nw.nexter = new(SeriesProvider)
 	}
