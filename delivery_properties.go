@@ -23,9 +23,9 @@ type DeliveryProperties interface {
 	GetAppId() string           // application use - creating application id
 }
 
-func NewAmqpPublishingWithDelivery(dp DeliveryProperties) *amqp.Publishing {
+func NewAmqpPublishingWithDelivery(dp DeliveryProperties, body []byte) *amqp.Publishing {
 	return &amqp.Publishing{
-		Body:            make([]byte, 0),
+		Body:            body,
 		ContentType:     dp.GetContentType(),
 		ContentEncoding: dp.GetContentEncoding(),
 		DeliveryMode:    dp.GetDeliveryMode(),

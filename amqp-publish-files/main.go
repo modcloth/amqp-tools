@@ -23,6 +23,38 @@ const (
 	PARTIAL_FAILURE   = 9
 )
 
+type DeliveryPropertiesHolder struct {
+	ContentType            *string
+	ContentEncoding        *string
+	DeliveryMode           *uint
+	Priority               *uint
+	CorrelationIdGenerator NexterWrapper
+	ReplyTo                *string
+	Expiration             *string
+	MessageIdGenerator     NexterWrapper
+	Timestamp              *int64
+	Type                   *string
+	UserId                 *string
+	AppId                  *string
+}
+
+func (me *DeliveryPropertiesHolder) DeliveryPropertiesGenerator() *DeliveryPropertiesGenerator {
+	return &DeliveryPropertiesGenerator{
+		ContentType:            *me.ContentType,
+		ContentEncoding:        *me.ContentEncoding,
+		DeliveryMode:           *me.DeliveryMode,
+		Priority:               *me.Priority,
+		CorrelationIdGenerator: &me.CorrelationIdGenerator,
+		ReplyTo:                *me.ReplyTo,
+		Expiration:             *me.Expiration,
+		MessageIdGenerator:     &me.MessageIdGenerator,
+		Timestamp:              *me.Timestamp,
+		Type:                   *me.Type,
+		UserId:                 *me.UserId,
+		AppId:                  *me.AppId,
+	}
+}
+
 var (
 	deliveryProperties *DeliveryPropertiesHolder = new(DeliveryPropertiesHolder)
 	amqpUri                                      = flag.String("uri", "", "AMQP connection URI")
@@ -121,7 +153,7 @@ func main() {
 	}
 
 	fileChan := make(chan string)
-	resultChan := make(chan *PublishFileResult)
+	resultChan := make(chan *PublishResult)
 
 	go func() {
 		defer close(fileChan)
@@ -148,7 +180,7 @@ func main() {
 	}()
 
 	go PublishFiles(fileChan, connectionUri, exchange, *routingKey,
-		*mandatory, *immediate, deliveryProperties, resultChan)
+		*mandatory, *immediate, deliveryProperties.DeliveryPropertiesGenerator(), resultChan)
 
 	for result := range resultChan {
 		if result.Error != nil {
@@ -156,12 +188,11 @@ func main() {
 				log.Println("FATAL:", result.Message, result.Error)
 				os.Exit(FATAL_ERROR)
 			} else {
-				log.Println("ERROR:", result.Message,
-					result.Filename, result.Error)
+				log.Println("ERROR:", result.Message, result.Error)
 				hadError = true
 			}
 		} else {
-			log.Println(result.Message, result.Filename)
+		  log.Println(result.Message)
 		}
 	}
 

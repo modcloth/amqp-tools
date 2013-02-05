@@ -10,16 +10,7 @@ import (
 )
 
 func TestPublishFileResult(t *testing.T) {
-	res := &amqptools.PublishFileResult{
-		"foo",
-		"wat",
-		errors.New("not really, nerds!"),
-		false,
-	}
-
-	if res.Filename != "foo" {
-		t.Fail()
-	}
+	res := &amqptools.PublishResult{"wat", errors.New("not really, nerds!"), false}
 
 	if res.Message != "wat" {
 		t.Fail()
