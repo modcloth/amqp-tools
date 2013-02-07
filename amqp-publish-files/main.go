@@ -42,8 +42,8 @@ func (me *DeliveryPropertiesHolder) DeliveryPropertiesGenerator() *DeliveryPrope
 	return &DeliveryPropertiesGenerator{
 		ContentType:            *me.ContentType,
 		ContentEncoding:        *me.ContentEncoding,
-		DeliveryMode:           *me.DeliveryMode,
-		Priority:               *me.Priority,
+		DeliveryMode:           uint8(*me.DeliveryMode),
+		Priority:               uint8(*me.Priority),
 		CorrelationIdGenerator: &me.CorrelationIdGenerator,
 		ReplyTo:                *me.ReplyTo,
 		Expiration:             *me.Expiration,

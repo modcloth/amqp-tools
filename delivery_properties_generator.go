@@ -7,8 +7,8 @@ import (
 type DeliveryPropertiesGenerator struct {
 	ContentType            string
 	ContentEncoding        string
-	DeliveryMode           uint
-	Priority               uint
+	DeliveryMode           uint8
+	Priority               uint8
 	CorrelationIdGenerator Nexter
 	ReplyTo                string
 	Expiration             string
@@ -21,8 +21,8 @@ type DeliveryPropertiesGenerator struct {
 
 func (dph *DeliveryPropertiesGenerator) GetContentType() string     { return dph.ContentType }
 func (dph *DeliveryPropertiesGenerator) GetContentEncoding() string { return dph.ContentEncoding }
-func (dph *DeliveryPropertiesGenerator) GetDeliveryMode() uint8     { return uint8(dph.DeliveryMode) }
-func (dph *DeliveryPropertiesGenerator) GetPriority() uint8         { return uint8(dph.Priority) }
+func (dph *DeliveryPropertiesGenerator) GetDeliveryMode() uint8     { return dph.DeliveryMode }
+func (dph *DeliveryPropertiesGenerator) GetPriority() uint8         { return dph.Priority }
 func (dph *DeliveryPropertiesGenerator) GetCorrelationId() string {
 	result, err := dph.CorrelationIdGenerator.Next()
 
