@@ -192,7 +192,7 @@ func main() {
 				hadError = true
 			}
 		} else {
-		  log.Println(result.Message)
+			log.Println(result.Message)
 		}
 	}
 
