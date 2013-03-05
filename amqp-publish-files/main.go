@@ -69,6 +69,7 @@ var (
 		"Publish message with mandatory property set.")
 	immediate = flag.Bool("immediate", false,
 		"Publish message with immediate property set.")
+	numRoutines = flag.Int("threads", 3, "Number of concurrent publishers")
 
 	usageString = `Usage: %s [options] <exchange> <file> [file file ...]
 
@@ -179,8 +180,10 @@ func main() {
 		}
 	}()
 
-	go PublishFiles(fileChan, connectionUri, exchange, *routingKey,
-		*mandatory, *immediate, deliveryProperties.DeliveryPropertiesGenerator(), resultChan)
+	for i := 0; i < *numRoutines; i++ {
+		go PublishFiles(fileChan, connectionUri, exchange, *routingKey,
+			*mandatory, *immediate, deliveryProperties.DeliveryPropertiesGenerator(), resultChan)
+	}
 
 	for result := range resultChan {
 		if result.Error != nil {
