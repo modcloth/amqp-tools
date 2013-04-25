@@ -86,7 +86,7 @@ func init() {
 		"Content-type, else derived from file extension.")
 	deliveryProperties.ContentEncoding = flag.String("content-encoding", "UTF-8",
 		"Mime content-encoding.")
-	deliveryProperties.DeliveryMode = flag.Uint("delivery-mode", 1,
+	deliveryProperties.DeliveryMode = flag.Uint("delivery-mode", 2,
 		"Delivery mode (1 for non-persistent, 2 for persistent.")
 	deliveryProperties.Priority = flag.Uint("priority", 0, "queue implementation use - 0 to 9")
 	deliveryProperties.ReplyTo = flag.String("replyto", "", "application use - address to to reply to (ex: rpc)")
