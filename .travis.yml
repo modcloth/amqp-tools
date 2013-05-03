@@ -1,0 +1,4 @@
+language: go
+install:
+ - mkdir -p $HOME/gopath/src/github.com/modcloth
+ - ln -sv $TRAVIS_BUILD_DIR $HOME/gopath/src/github.com/modcloth/peeps
