@@ -48,6 +48,7 @@ func PublishFiles(files chan string, connectionUri, exchange,
 
 func Publish(messages chan *amqp.Publishing, connectionUri, exchange,
 	routingKey string, mandatory, immediate bool, results chan *PublishResult) {
+
 	var err error
 	var conn *amqp.Connection
 	var channel *amqp.Channel
@@ -89,7 +90,7 @@ func Publish(messages chan *amqp.Publishing, connectionUri, exchange,
 			results <- &PublishResult{"Channel closed!", err, true}
 		case <-pubAcks:
 			results <- &PublishResult{
-				fmt.Sprintf("Published to exchange '%s' routing key '%v':", exchange, routingKey),
+				fmt.Sprintf("Published to exchange '%s' routing key '%v': %+v", exchange, routingKey, message),
 				nil,
 				false,
 			}
