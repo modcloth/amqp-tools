@@ -1,4 +1,10 @@
+---
 language: go
 install:
- - mkdir -p $HOME/gopath/src/github.com/modcloth
- - ln -sv $TRAVIS_BUILD_DIR $HOME/gopath/src/github.com/modcloth/peeps
+- cd $TRAVIS_BUILD_DIR && make build
+- go test -i ./...
+script: cd $TRAVIS_BUILD_DIR && make test
+notifications:
+  email:
+    recipients:
+      - flintknappers+amqp-tools@modcloth.com
