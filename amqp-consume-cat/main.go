@@ -37,18 +37,21 @@ type deliveryPlus struct {
 }
 
 var (
-	uri = flag.String("U",
+	uriFlag = flag.String("U",
 		"amqp://guest:guest@localhost:5672", "AMQP Connection URI")
-	rabbitmqLogs = flag.Bool("rabbitmq.logs",
+	rmqLogsFlag = flag.Bool("rabbitmq.logs",
 		false, "Consume from amq.rabbitmq.logs and amq.rabbitmq.trace")
-	debug     = flag.Bool("debug", false, "Show debug output")
-	showCat   = flag.Bool("mrow", false, "")
-	outputDir = flag.String("d", "", "Output directory for messages. If not specified, output will go to stdout.")
-	debugger  = &Debugger{}
+	debugFlag   = flag.Bool("debug", false, "Show debug output")
+	showCatFlag = flag.Bool("mrow", false, "")
+	outDirFlag  = flag.String("d", "",
+		"Output directory for messages. If not specified, output will go to stdout.")
+	versionFlag = flag.Bool("version", false, "Show version information and exit")
+
+	debugger = &Debugger{}
 )
 
 func deliver(delivery amqp.Delivery) {
-	if len(*outputDir) == 0 {
+	if len(*outDirFlag) == 0 {
 		fmt.Printf("%s: %s", delivery.Exchange, string(delivery.Body))
 	} else {
 		deliveryPlus := &deliveryPlus{
@@ -77,7 +80,7 @@ func deliver(delivery amqp.Delivery) {
 		}
 
 		pathParts := []string{
-			strings.TrimRight(*outputDir, string(os.PathSeparator)),
+			strings.TrimRight(*outDirFlag, string(os.PathSeparator)),
 			exchangeStr,
 			folderName,
 		}
@@ -112,20 +115,24 @@ func main() {
 		"\"/\"-delimited strings of the form "+
 		"\"exchange/queue-name/routing-key\"")
 	flag.Parse()
-	if *showCat {
+	if *showCatFlag {
 		fmt.Println(CONSUME_CAT)
 		return
 	}
-	debugger.SetDebug(*debug)
+	if *versionFlag {
+		PrintVersion()
+		return
+	}
+	debugger.SetDebug(*debugFlag)
 
 	quit := make(chan bool)
 	deliveries := make(chan amqp.Delivery)
 
-	if *rabbitmqLogs || len(queueBindings) > 0 {
-		if *rabbitmqLogs {
+	if *rmqLogsFlag || len(queueBindings) > 0 {
+		if *rmqLogsFlag {
 			debugger.Print("Tailing RabbitMQ Logs")
 
-			go TailRabbitLogs(*uri, deliveries, debugger)
+			go TailRabbitLogs(*uriFlag, deliveries, debugger)
 
 			go func() {
 				for delivery := range deliveries {
@@ -137,7 +144,7 @@ func main() {
 			for _, binding := range queueBindings {
 				debugger.Print(fmt.Sprintf("Binding to %s", binding))
 			}
-			go ConsumeForBindings(*uri, queueBindings, deliveries, debugger)
+			go ConsumeForBindings(*uriFlag, queueBindings, deliveries, debugger)
 
 			go func() {
 				for delivery := range deliveries {
