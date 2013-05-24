@@ -10,17 +10,15 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-)
 
-import (
 	. "github.com/modcloth/amqp-tools"
 )
 
 const (
-	SUCCESS           = 0
-	ARG_PARSING_ERROR = 1
-	FATAL_ERROR       = 86
-	PARTIAL_FAILURE   = 9
+	success         = 0
+	argParsingError = 1
+	fatalError      = 86
+	partialFailure  = 9
 )
 
 type DeliveryPropertiesHolder struct {
@@ -57,19 +55,24 @@ func (me *DeliveryPropertiesHolder) DeliveryPropertiesGenerator() *DeliveryPrope
 
 var (
 	deliveryProperties *DeliveryPropertiesHolder = new(DeliveryPropertiesHolder)
-	amqpUri                                      = flag.String("uri", "", "AMQP connection URI")
-	amqpUsername                                 = flag.String("user", "guest", "AMQP username")
-	amqpPassword                                 = flag.String("password", "guest", "AMQP password")
-	amqpHost                                     = flag.String("host", "localhost", "AMQP host")
-	amqpVHost                                    = flag.String("vhost", "", "AMQP vhost")
-	amqpPort                                     = flag.Int("port", 5672, "AMQP port")
 
-	routingKey = flag.String("routing-key", "", "Publish message to routing key")
-	mandatory  = flag.Bool("mandatory", false,
+	amqpUriFlag      = flag.String("uri", "", "AMQP connection URI")
+	amqpUsernameFlag = flag.String("user", "guest", "AMQP username")
+	amqpPasswordFlag = flag.String("password", "guest", "AMQP password")
+	amqpHostFlag     = flag.String("host", "localhost", "AMQP host")
+	amqpVHostFlag    = flag.String("vhost", "", "AMQP vhost")
+	amqpPortFlag     = flag.Int("port", 5672, "AMQP port")
+
+	routingKeyFlag = flag.String("routing-key", "",
+		"Publish message to routing key")
+	mandatoryFlag = flag.Bool("mandatory", false,
 		"Publish message with mandatory property set.")
-	immediate = flag.Bool("immediate", false,
+	immediateFlag = flag.Bool("immediate", false,
 		"Publish message with immediate property set.")
-	numRoutines = flag.Int("threads", 3, "Number of concurrent publishers")
+	numRoutinesFlag = flag.Int("threads", 3,
+		"Number of concurrent publishers")
+
+	versionFlag = flag.Bool("version", false, "Show version information and exit")
 
 	usageString = `Usage: %s [options] <exchange> <file> [file file ...]
 
@@ -136,21 +139,25 @@ func main() {
 	}
 
 	flag.Parse()
+	if *versionFlag {
+		PrintVersion()
+		return
+	}
 
 	if flag.NArg() < 2 {
 		fmt.Fprintf(os.Stderr,
 			"ERROR: The exchange name and a list of file names are required\n")
 		flag.Usage()
-		os.Exit(ARG_PARSING_ERROR)
+		os.Exit(argParsingError)
 	}
 
 	exchange := flag.Arg(0)
 	files := flag.Args()[1:flag.NArg()]
 
-	connectionUri := *amqpUri
+	connectionUri := *amqpUriFlag
 	if len(connectionUri) < 1 {
-		connectionUri = fmt.Sprintf("amqp://%s:%s@%s:%d/%s", *amqpUsername,
-			*amqpPassword, *amqpHost, *amqpPort, *amqpVHost)
+		connectionUri = fmt.Sprintf("amqp://%s:%s@%s:%d/%s", *amqpUsernameFlag,
+			*amqpPasswordFlag, *amqpHostFlag, *amqpPortFlag, *amqpVHostFlag)
 	}
 
 	fileChan := make(chan string)
@@ -180,16 +187,16 @@ func main() {
 		}
 	}()
 
-	for i := 0; i < *numRoutines; i++ {
-		go PublishFiles(fileChan, connectionUri, exchange, *routingKey,
-			*mandatory, *immediate, deliveryProperties.DeliveryPropertiesGenerator(), resultChan)
+	for i := 0; i < *numRoutinesFlag; i++ {
+		go PublishFiles(fileChan, connectionUri, exchange, *routingKeyFlag,
+			*mandatoryFlag, *immediateFlag, deliveryProperties.DeliveryPropertiesGenerator(), resultChan)
 	}
 
 	for result := range resultChan {
 		if result.Error != nil {
 			if result.IsFatal {
 				log.Println("FATAL:", result.Message, result.Error)
-				os.Exit(FATAL_ERROR)
+				os.Exit(fatalError)
 			} else {
 				log.Println("ERROR:", result.Message, result.Error)
 				hadError = true
@@ -200,8 +207,8 @@ func main() {
 	}
 
 	if hadError {
-		os.Exit(PARTIAL_FAILURE)
+		os.Exit(partialFailure)
 	} else {
-		os.Exit(SUCCESS)
+		os.Exit(success)
 	}
 }
