@@ -45,7 +45,6 @@ var (
 	showCatFlag = flag.Bool("mrow", false, "")
 	outDirFlag  = flag.String("d", "",
 		"Output directory for messages. If not specified, output will go to stdout.")
-	versionFlag = flag.Bool("version", false, "Show version information and exit")
 
 	debugger = &Debugger{}
 )
@@ -117,10 +116,6 @@ func main() {
 	flag.Parse()
 	if *showCatFlag {
 		fmt.Println(CONSUME_CAT)
-		return
-	}
-	if *versionFlag {
-		PrintVersion()
 		return
 	}
 	debugger.SetDebug(*debugFlag)

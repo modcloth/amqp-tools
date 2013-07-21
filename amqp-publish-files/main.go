@@ -72,8 +72,6 @@ var (
 	numRoutinesFlag = flag.Int("threads", 3,
 		"Number of concurrent publishers")
 
-	versionFlag = flag.Bool("version", false, "Show version information and exit")
-
 	usageString = `Usage: %s [options] <exchange> <file> [file file ...]
 
 Publishes files as messages to a given exchange.  If there is only a single
@@ -139,10 +137,6 @@ func main() {
 	}
 
 	flag.Parse()
-	if *versionFlag {
-		PrintVersion()
-		return
-	}
 
 	if flag.NArg() < 2 {
 		fmt.Fprintf(os.Stderr,
