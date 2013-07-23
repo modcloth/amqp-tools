@@ -4,9 +4,11 @@ TARGETS := \
   github.com/modcloth/amqp-tools \
   github.com/modcloth/amqp-tools/amqp-publish-files \
   github.com/modcloth/amqp-tools/amqp-consume-cat
+REV_VAR := github.com/modcloth/amqp-tools.RevString
 VERSION_VAR := github.com/modcloth/amqp-tools.VersionString
 REPO_VERSION := $(shell git describe --always --dirty --tags)
-GOBUILD_VERSION_ARGS := -ldflags "-X $(VERSION_VAR) $(REPO_VERSION)"
+REPO_REV := $(shell git rev-parse --sq HEAD)
+GOBUILD_VERSION_ARGS := -ldflags "-X $(REV_VAR) $(REPO_REV) -X $(VERSION_VAR) $(REPO_VERSION)"
 
 all: build test
 

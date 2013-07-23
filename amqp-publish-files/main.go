@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -71,8 +72,8 @@ var (
 		"Publish message with immediate property set.")
 	numRoutinesFlag = flag.Int("threads", 3,
 		"Number of concurrent publishers")
-
-	versionFlag = flag.Bool("version", false, "Show version information and exit")
+	revFlag     = false
+	versionFlag = false
 
 	usageString = `Usage: %s [options] <exchange> <file> [file file ...]
 
@@ -105,6 +106,8 @@ func init() {
 	flag.Var(&deliveryProperties.MessageIdGenerator,
 		"messageid",
 		"'series' for incrementing ids, 'uuid' for UUIDs, static value otherwise")
+	flag.BoolVar(&versionFlag, "version", false, "Print version and exit")
+	flag.BoolVar(&revFlag, "rev", false, "Print git revision and exit")
 }
 
 type NexterWrapper struct{ nexter Nexter }
@@ -139,9 +142,22 @@ func main() {
 	}
 
 	flag.Parse()
-	if *versionFlag {
-		PrintVersion()
-		return
+
+	if versionFlag {
+		progName := path.Base(os.Args[0])
+		if VersionString == "" {
+			VersionString = "<unknown>"
+		}
+		fmt.Printf("%s %s\n", progName, VersionString)
+		os.Exit(0)
+	}
+
+	if revFlag {
+		if RevString == "" {
+			RevString = "<unknown>"
+		}
+		fmt.Println(RevString)
+		os.Exit(0)
 	}
 
 	if flag.NArg() < 2 {
