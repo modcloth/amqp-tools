@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -29,7 +30,11 @@ const (
 `
 )
 
-var queueBindings QueueBindings
+var (
+	queueBindings QueueBindings
+	revFlag       = false
+	versionFlag   = false
+)
 
 type deliveryPlus struct {
 	RawDelivery  amqp.Delivery
@@ -109,15 +114,38 @@ func deliver(delivery amqp.Delivery) {
 	}
 }
 
-func main() {
+func init() {
 	flag.Var(&queueBindings, "q", "Queue bindings specified as "+
 		"\"/\"-delimited strings of the form "+
 		"\"exchange/queue-name/routing-key\"")
+	flag.BoolVar(&versionFlag, "version", false, "Print version and exit")
+	flag.BoolVar(&revFlag, "rev", false, "Print git revision and exit")
+}
+
+func main() {
 	flag.Parse()
 	if *showCatFlag {
 		fmt.Println(CONSUME_CAT)
 		return
 	}
+
+	if versionFlag {
+		progName := path.Base(os.Args[0])
+		if VersionString == "" {
+			VersionString = "<unknown>"
+		}
+		fmt.Printf("%s %s\n", progName, VersionString)
+		os.Exit(0)
+	}
+
+	if revFlag {
+		if RevString == "" {
+			RevString = "<unknown>"
+		}
+		fmt.Println(RevString)
+		os.Exit(0)
+	}
+
 	debugger.SetDebug(*debugFlag)
 
 	quit := make(chan bool)
