@@ -29,7 +29,6 @@ const (
 
 var (
 	uriFlag     = flag.String("U", "amqp://guest:guest@localhost:5672", "AMQP Connection URI")
-	rmqLogsFlag = flag.Bool("rabbitmq.logs", false, "Consume from amq.rabbitmq.logs and amq.rabbitmq.trace")
 	showCatFlag = flag.Bool("mrow", false, "")
 	versionFlag = flag.Bool("version", false, "Print version and exit")
 	revFlag     = flag.Bool("rev", false, "Print git revision and exit")
