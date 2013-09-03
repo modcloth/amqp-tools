@@ -177,7 +177,7 @@ HANDLING MESSAGES
 func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
 	addlData := make(map[string]interface{})
 	addlData["BodyAsString"] = string(delivery.Body)
-	deliveryPlus := &deliveryPlus{
+	deliveryPlus := &DeliveryPlus{
 		delivery,
 		addlData,
 	}

@@ -2,7 +2,7 @@ package amqptools
 
 import "github.com/streadway/amqp"
 
-type deliveryPlus struct {
+type DeliveryPlus struct {
 	RawDelivery amqp.Delivery
 	Data        map[string]interface{}
 }
