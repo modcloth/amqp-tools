@@ -19,6 +19,7 @@ var (
 	outDirFlag        = flag.String("d", "", "Output directory for messages. If not specified, output will go to stdout.")
 	continuousConsume = flag.Bool("continuous", false, "If true, consume indefinitely ; otherwise, exit when queue is emptied.")
 	prettyPrint       = flag.Bool("pretty", false, "Print more human-readable JSON. Should not be used if piping into another application.")
+	keepMessages      = flag.Bool("keep", false, "If set to false, messages will be purged from the queue after reading. Only applies for continuous: false")
 	consumerTag       string
 )
 
@@ -245,7 +246,12 @@ func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
 		err = file.Close()
 		debugger.WithError(err, fmt.Sprintf("Unable to close file '%s'.", fileName))
 	}
-	err = delivery.Ack(false)
+
+	if *keepMessages {
+		err = delivery.Reject(true)
+	} else {
+		err = delivery.Ack(false)
+	}
 	if debugger.WithError(err, "Unable to Ack a message") {
 		return
 	}
