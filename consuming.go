@@ -186,6 +186,9 @@ func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
 	var jsonBytes []byte
 	var err error
 
+	// necessary because otherwise it isn't unmarshalable
+	deliveryPlus.RawDelivery.Acknowledger = nil
+
 	if *prettyPrint {
 		jsonBytes, err = json.MarshalIndent(deliveryPlus, "", "\t")
 		if debugger.WithError(err, "Unable to marshal delivery into JSON.") {
