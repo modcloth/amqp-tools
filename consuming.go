@@ -237,5 +237,8 @@ func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
 		err = file.Close()
 		debugger.WithError(err, fmt.Sprintf("Unable to close file '%s'.", fileName))
 	}
-	delivery.Ack(false)
+	err = delivery.Ack(false)
+	if debugger.WithError(err, "Unable to Ack a message") {
+		return
+	}
 }
