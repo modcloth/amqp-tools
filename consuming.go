@@ -125,7 +125,6 @@ func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries
 		}
 
 		if *continuousConsume {
-			//handle acking after writing file
 			/*
 				autoAck = false (must manually Ack)
 				exclusive = true (so we only try to read from one consumer at a time)
@@ -153,7 +152,6 @@ func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries
 			}
 		}
 	} else {
-		count := 0
 		for _, ch := range consumerChannels {
 			binding := ch.binding
 			debugger.Print("Getting messages from queue", binding.QueueName)
@@ -165,8 +163,6 @@ func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries
 				if ok == false {
 					deliveries <- nil
 				} else {
-					count++
-					fmt.Printf("count: %d\n", count)
 					deliveries <- delivery
 				}
 			}
@@ -185,8 +181,7 @@ type deliveryPlus struct {
 
 func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
 	if len(*outDirFlag) == 0 {
-		fmt.Println("got here")
-		//fmt.Printf("%s: %s", delivery.Exchange, string(delivery.Body))
+		fmt.Printf("%s: %s", delivery.Exchange, string(delivery.Body))
 	} else {
 		deliveryPlus := &deliveryPlus{
 			delivery,
