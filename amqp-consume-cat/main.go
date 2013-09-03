@@ -41,15 +41,13 @@ type deliveryPlus struct {
 	BodyAsString string
 }
 
-var (
-	debugFlag   = flag.Bool("debug", false, "Show debug output")
 	uriFlag     = flag.String("U", "amqp://guest:guest@localhost:5672", "AMQP Connection URI")
 	rmqLogsFlag = flag.Bool("rabbitmq.logs", false, "Consume from amq.rabbitmq.logs and amq.rabbitmq.trace")
 	showCatFlag = flag.Bool("mrow", false, "")
 	versionFlag = flag.Bool("version", false, "Print version and exit")
 	revFlag     = flag.Bool("rev", false, "Print git revision and exit")
 
-	debugger = &Debugger{}
+	debugger      Debugger
 )
 
 func deliver(delivery amqp.Delivery) {
@@ -114,6 +112,7 @@ func deliver(delivery amqp.Delivery) {
 
 func init() {
 	flag.Var(&queueBindings, "q", "Queue bindings specified as \"/\"-delimited strings of the form \"exchange/queue-name/routing-key\"")
+	flag.Var(&debugger, "debug", "Show debug output")
 }
 
 func main() {
