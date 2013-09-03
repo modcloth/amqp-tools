@@ -188,12 +188,12 @@ func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
 
 	if *prettyPrint {
 		jsonBytes, err = json.MarshalIndent(deliveryPlus, "", "\t")
-		if debugger.WithError(err, "Unable to marshall delivery into JSON.") {
+		if debugger.WithError(err, "Unable to marshal delivery into JSON.") {
 			return
 		}
 	} else {
 		jsonBytes, err = json.Marshal(deliveryPlus)
-		if debugger.WithError(err, "Unable to marshall delivery into JSON.") {
+		if debugger.WithError(err, "Unable to marshal delivery into JSON.") {
 			return
 		}
 	}
