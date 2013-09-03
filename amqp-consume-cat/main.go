@@ -82,6 +82,7 @@ func main() {
 			for delivery := range deliveries {
 				switch delivery.(type) {
 				case nil:
+					debugger.Print("Done consuming. Thanks for playing!")
 					quit <- true
 				default:
 					HandleDelivery(delivery.(amqp.Delivery), debugger)
