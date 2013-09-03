@@ -18,6 +18,7 @@ import (
 var (
 	outDirFlag        = flag.String("d", "", "Output directory for messages. If not specified, output will go to stdout.")
 	continuousConsume = flag.Bool("continuous", false, "If true, consume indefinitely ; otherwise, exit when queue is emptied.")
+	prettyPrint       = flag.Bool("pretty", false, "Print more human-readable JSON. Should not be used if piping into another application.")
 	consumerTag       string
 )
 
@@ -175,23 +176,36 @@ HANDLING MESSAGES
 */
 
 type deliveryPlus struct {
-	RawDelivery  amqp.Delivery
-	BodyAsString string
+	RawDelivery amqp.Delivery
+	Data        map[string]interface{}
 }
 
 func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
-	if len(*outDirFlag) == 0 {
-		fmt.Printf("%s: %s", delivery.Exchange, string(delivery.Body))
-	} else {
-		deliveryPlus := &deliveryPlus{
-			delivery,
-			string(delivery.Body),
-		}
-		jsonBytes, err := json.MarshalIndent(deliveryPlus, "\t", "\t")
+	addlData := make(map[string]interface{})
+	addlData["BodyAsString"] = string(delivery.Body)
+	deliveryPlus := &deliveryPlus{
+		delivery,
+		addlData,
+	}
+
+	var jsonBytes []byte
+	var err error
+
+	if *prettyPrint {
+		jsonBytes, err = json.MarshalIndent(deliveryPlus, "", "\t")
 		if debugger.WithError(err, "Unable to marshall delivery into JSON.") {
 			return
 		}
+	} else {
+		jsonBytes, err = json.Marshal(deliveryPlus)
+		if debugger.WithError(err, "Unable to marshall delivery into JSON.") {
+			return
+		}
+	}
 
+	if len(*outDirFlag) == 0 {
+		fmt.Println(fmt.Sprintf("%s", string(jsonBytes)))
+	} else {
 		var folderName string
 		if len(delivery.MessageId) > 0 {
 			folderName = delivery.MessageId
