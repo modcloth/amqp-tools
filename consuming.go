@@ -174,12 +174,6 @@ func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries
 /*
 HANDLING MESSAGES
 */
-
-type deliveryPlus struct {
-	RawDelivery amqp.Delivery
-	Data        map[string]interface{}
-}
-
 func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
 	addlData := make(map[string]interface{})
 	addlData["BodyAsString"] = string(delivery.Body)
