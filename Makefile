@@ -3,7 +3,8 @@ LIBS := \
 TARGETS := \
   github.com/modcloth/amqp-tools \
   github.com/modcloth/amqp-tools/amqp-publish-files \
-  github.com/modcloth/amqp-tools/amqp-consume-cat
+  github.com/modcloth/amqp-tools/amqp-consume-cat \
+  github.com/modcloth/amqp-tools/amqp-replay-ninja
 REV_VAR := github.com/modcloth/amqp-tools.RevString
 VERSION_VAR := github.com/modcloth/amqp-tools.VersionString
 REPO_VERSION := $(shell git describe --always --dirty --tags)
