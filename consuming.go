@@ -46,8 +46,7 @@ func (qb *QueueBinding) String() string {
 func (qb *QueueBindings) Set(value string) error {
 	qbparts := strings.Split(value, "/")
 	if len(qbparts) != 3 {
-		return errors.New("Queue Binding argument requires exchange, " +
-			"queue name and routing key and NOTHING else!")
+		return errors.New("Queue Binding argument requires exchange, queue name, and routing key and NOTHING else!")
 	}
 	newBinding := &QueueBinding{
 		Exchange:   qbparts[0],

@@ -42,14 +42,12 @@ type deliveryPlus struct {
 }
 
 var (
-	uriFlag = flag.String("U",
-		"amqp://guest:guest@localhost:5672", "AMQP Connection URI")
-	rmqLogsFlag = flag.Bool("rabbitmq.logs",
-		false, "Consume from amq.rabbitmq.logs and amq.rabbitmq.trace")
 	debugFlag   = flag.Bool("debug", false, "Show debug output")
+	uriFlag     = flag.String("U", "amqp://guest:guest@localhost:5672", "AMQP Connection URI")
+	rmqLogsFlag = flag.Bool("rabbitmq.logs", false, "Consume from amq.rabbitmq.logs and amq.rabbitmq.trace")
 	showCatFlag = flag.Bool("mrow", false, "")
-	outDirFlag  = flag.String("d", "",
-		"Output directory for messages. If not specified, output will go to stdout.")
+	versionFlag = flag.Bool("version", false, "Print version and exit")
+	revFlag     = flag.Bool("rev", false, "Print git revision and exit")
 
 	debugger = &Debugger{}
 )
@@ -115,21 +113,18 @@ func deliver(delivery amqp.Delivery) {
 }
 
 func init() {
-	flag.Var(&queueBindings, "q", "Queue bindings specified as "+
-		"\"/\"-delimited strings of the form "+
-		"\"exchange/queue-name/routing-key\"")
-	flag.BoolVar(&versionFlag, "version", false, "Print version and exit")
-	flag.BoolVar(&revFlag, "rev", false, "Print git revision and exit")
+	flag.Var(&queueBindings, "q", "Queue bindings specified as \"/\"-delimited strings of the form \"exchange/queue-name/routing-key\"")
 }
 
 func main() {
 	flag.Parse()
+
 	if *showCatFlag {
 		fmt.Println(CONSUME_CAT)
-		return
+		os.Exit(0)
 	}
 
-	if versionFlag {
+	if *versionFlag {
 		progName := path.Base(os.Args[0])
 		if VersionString == "" {
 			VersionString = "<unknown>"
@@ -138,7 +133,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if revFlag {
+	if *revFlag {
 		if RevString == "" {
 			RevString = "<unknown>"
 		}
