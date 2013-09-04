@@ -24,10 +24,7 @@ var (
 	consumerTag       string
 )
 
-/*
-ESTABLISHING BINDING LIST
-*/
-
+// QueueBinding is used for establishing binding list
 type QueueBinding struct {
 	QueueName  string
 	RoutingKey string
@@ -38,6 +35,7 @@ type QueueBinding struct {
 	Args   amqp.Table
 }
 
+// QueueBindings is simply an array of QueueBinding structs
 type QueueBindings []*QueueBinding
 
 func (qb *QueueBindings) String() string {
@@ -60,10 +58,11 @@ func (qb *QueueBinding) String() string {
 	return ret
 }
 
+// Set is used by flag to assign contents to a custom type
 func (qb *QueueBindings) Set(value string) error {
 	qbparts := strings.Split(value, "/")
 	if len(qbparts) != 3 {
-		return errors.New("Queue Binding argument requires exchange, queue name, and routing key and NOTHING else!")
+		return errors.New("queue binding argument requires exchange, queue name, and routing key and NOTHING else")
 	}
 	newBinding := &QueueBinding{
 		Exchange:   qbparts[0],
@@ -77,15 +76,12 @@ func (qb *QueueBindings) Set(value string) error {
 	return nil
 }
 
-/*
-ESTABLISHING CONNECTIONS
-*/
-
 type consumerChannel struct {
 	deliveries <-chan amqp.Delivery
 	binding    *QueueBinding
 }
 
+// ConsumeForBindings establishes a consumer connection and passes the deliveries into a provided channel
 func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries chan interface{}, debugger amqptools.Debugger) {
 	defer close(deliveries)
 
@@ -173,9 +169,8 @@ func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries
 	}
 }
 
-/*
-HANDLING MESSAGES
-*/
+// HandleDelivery handles the amqp.Delivery object and either prints it out or
+// writes it to a files
 func HandleDelivery(delivery amqp.Delivery, debugger amqptools.Debugger) {
 	addlData := make(map[string]interface{})
 	addlData["BodyAsString"] = string(delivery.Body)
@@ -243,9 +238,8 @@ func HandleDelivery(delivery amqp.Delivery, debugger amqptools.Debugger) {
 		_, err = file.Write(jsonBytes)
 		if debugger.WithError(err, fmt.Sprintf("Unable to write data into buffer for '%s'.", fileName)) {
 			return
-		} else {
-			debugger.Print(fmt.Sprintf("Data written to %s", fileName))
 		}
+		debugger.Print(fmt.Sprintf("Data written to %s", fileName))
 
 		err = file.Close()
 		debugger.WithError(err, fmt.Sprintf("Unable to close file '%s'.", fileName))
