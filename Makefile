@@ -26,7 +26,7 @@ johnny_deps:
 	chmod +x $@
 
 clean:
-	go clean -X $(LIBS) || true
+	go clean -x $(LIBS) || true
 	if [ -d $${GOPATH%%:*}/pkg ] ; then \
 	  find $${GOPATH%%:*}/pkg -name '*amqp-tools*' -exec rm -v {} \; ; \
 	fi
