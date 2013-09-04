@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -10,17 +9,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"time"
 )
 
 import (
 	. "amqp-tools"
+	"amqp-tools/replaying"
 	"github.com/streadway/amqp"
 )
-
-const timeFormat = "Mon Jan 02 15:04:05 MST 2006"
-
-//TODO: handle consume cat variables that leaked into amqptools
 
 var (
 	uriFlag     = flag.String("U", "amqp://guest:guest@localhost:5672", "AMQP Connection URI")
@@ -41,33 +36,6 @@ their contents may be pretty printed.
 
 	debugger Debugger
 )
-
-type ErrorMessage struct {
-	OriginalMessage OriginalMessage `json:"original_message"`
-	OtherData       map[string]interface{}
-}
-
-type OriginalMessage struct {
-	Payload    string     `json:"payload"`
-	Properties Properties `json:"properties"`
-	RoutingKey string     `json:"routing_key"`
-	Exchange   string     `json:"exchange"`
-}
-
-type Properties struct {
-	AppId           string `json:"app_id"`
-	ContentType     string `json:"content_type"`
-	ContentEncoding string `json:"content_encoding"`
-	CorrelationId   string `json:"correlation_id"`
-	MessageId       string `json:"message_id"`
-	DeliveryMode    int    `json:"delivery_mode"`
-	Expiration      interface{}
-	Headers         interface{}
-	Priority        interface{}
-	Timestamp       string `json:"timestamp"`
-	Type            interface{}
-	UserId          interface{}
-}
 
 func init() {
 	flag.Var(&debugger, "debug", "Show debug output")
@@ -117,8 +85,8 @@ func main() {
 
 	defer conn.Close()
 
-	channel, err = conn.Channel()
 	if debugger.WithError(err, "Failed to open channel ", err) {
+		channel, err = conn.Channel()
 		os.Exit(3)
 	}
 	debugger.Print("channel.established")
@@ -136,7 +104,7 @@ func main() {
 				}
 				break
 			}
-			handleMessageBytes(bytes, channel)
+			replaying.HandleMessageBytes(bytes, channel, debugger)
 		}
 
 	} else {
@@ -145,55 +113,7 @@ func main() {
 			if debugger.WithError(err, fmt.Sprintf("Unable to read file %s: ", file), err) {
 				os.Exit(13)
 			}
-			handleMessageBytes(bytes, channel)
+			replaying.HandleMessageBytes(bytes, channel, debugger)
 		}
-	}
-}
-
-func handleMessageBytes(bytes []byte, channel *amqp.Channel) {
-	var err error
-
-	delivery := &DeliveryPlus{}
-
-	err = json.Unmarshal(bytes, &delivery)
-
-	if debugger.WithError(err, "Unable to unmarshal delivery into JSON: ", err) {
-		os.Exit(7)
-	}
-
-	/*
-		DO STUFF WITH INPUT LINE
-	*/
-
-	rawDelivery := delivery.RawDelivery
-	bodyBytes := rawDelivery.Body
-
-	errorMessage := &ErrorMessage{}
-
-	err = json.Unmarshal(bodyBytes, &errorMessage)
-	if debugger.WithError(err, "Unable to unmarshal delivery into JSON: ", err) {
-		os.Exit(7)
-	}
-
-	oMsg := errorMessage.OriginalMessage
-
-	debugger.Print(fmt.Sprintf("consumed message: %+v", errorMessage.OriginalMessage))
-
-	timestamp, _ := time.Parse(timeFormat, oMsg.Properties.Timestamp)
-
-	msg := &amqp.Publishing{
-		ContentType:     oMsg.Properties.ContentType,
-		ContentEncoding: oMsg.Properties.ContentEncoding,
-		DeliveryMode:    uint8(oMsg.Properties.DeliveryMode),
-		CorrelationId:   oMsg.Properties.CorrelationId,
-		MessageId:       oMsg.Properties.MessageId,
-		Timestamp:       timestamp,
-		AppId:           oMsg.Properties.AppId,
-		Body:            []byte(oMsg.Payload),
-	}
-
-	err = channel.Publish(oMsg.Exchange, oMsg.RoutingKey, true, false, *msg)
-	if debugger.WithError(err, "Unable to publish: ", err) {
-		os.Exit(19)
 	}
 }
