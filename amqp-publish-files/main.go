@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	deliveryProperties *publishing.DeliveryPropertiesHolder = new(publishing.DeliveryPropertiesHolder)
+	deliveryProperties *publishing.DeliveryPropertiesHolder = &publishing.DeliveryPropertiesHolder{}
 
 	amqpUriFlag      = flag.String("uri", "", "AMQP connection URI")
 	amqpUsernameFlag = flag.String("user", "guest", "AMQP username")
