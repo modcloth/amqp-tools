@@ -4,7 +4,7 @@ VERSION_VAR := amqp-tools.VersionString
 REPO_VERSION := $(shell git describe --always --dirty --tags)
 REPO_REV := $(shell git rev-parse --sq HEAD)
 GOBUILD_VERSION_ARGS := -ldflags "-X $(REV_VAR) $(REPO_REV) -X $(VERSION_VAR) $(REPO_VERSION)"
-JOHNNY_DEPS_VERSION := v0.1.3
+JOHNNY_DEPS_VERSION := v0.2.3
 
 all: build test
 
