@@ -10,9 +10,9 @@ all: build test
 
 build: deps
 	go install $(GOBUILD_VERSION_ARGS) -x $(LIBS)
-	go build -o $${GOPATH%%:*}/bin/amqp-consume-cat $(GOBUILD_VERSION_ARGS) ./amqp-consume-cat
-	go build -o $${GOPATH%%:*}/bin/amqp-publish-files $(GOBUILD_VERSION_ARGS) ./amqp-publish-files
-	go build -o $${GOPATH%%:*}/bin/amqp-replay-ninja $(GOBUILD_VERSION_ARGS) ./amqp-replay-ninja
+	for exe in consume-cat publish-files replay-ninja ; do \
+	  go build -o $${GOPATH%%:*}/bin/amqp-$$exe $(GOBUILD_VERSION_ARGS) ./amqp-$$exe ; \
+	done
 
 test:
 	go test $(GOBUILD_VERSION_ARGS) -x -v $(LIBS)
