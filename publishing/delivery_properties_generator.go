@@ -1,7 +1,7 @@
 package publishing
 
 import (
-	"github.com/modcloth/amqp-tools"
+	"amqp-tools"
 	"time"
 )
 

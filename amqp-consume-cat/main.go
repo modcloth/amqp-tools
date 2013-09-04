@@ -8,8 +8,8 @@ import (
 )
 
 import (
-	. "github.com/modcloth/amqp-tools"
-	"github.com/modcloth/amqp-tools/consuming"
+	. "amqp-tools"
+	"amqp-tools/consuming"
 	"github.com/streadway/amqp"
 )
 

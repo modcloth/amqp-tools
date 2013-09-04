@@ -1,6 +1,6 @@
 package publishing
 
-import "github.com/modcloth/amqp-tools"
+import "amqp-tools"
 
 type NexterWrapper struct{ nexter amqptools.Nexter }
 

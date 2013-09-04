@@ -6,7 +6,7 @@ import (
 )
 
 import (
-	"github.com/modcloth/amqp-tools/publishing"
+	"amqp-tools/publishing"
 )
 
 func TestPublishFileResult(t *testing.T) {
