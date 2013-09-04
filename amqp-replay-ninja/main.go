@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 )
 
@@ -25,6 +26,18 @@ var (
 	uriFlag     = flag.String("U", "amqp://guest:guest@localhost:5672", "AMQP Connection URI")
 	versionFlag = flag.Bool("version", false, "Print version and exit")
 	revFlag     = flag.Bool("rev", false, "Print git revision and exit")
+	usageString = `Usage: %s [options] <file> [file file ...]
+
+Parses messages consumed from RabbitMQ, extracts data and metadata of the
+original message, and republishes the message. If there is only a single
+filename entry and it is "-", it is assumed that the message data will be read
+from stdin with entries delimited by line feeds ("\n"). Each line must be a
+json-marshaled DeliveryPlus struct.  This is the output format of
+amqp-consume-cat, so data may be piped from amqp-consume-cat directly into
+amqp-replay-ninja.  If files are specified, the files must be valid json but
+their contents may be pretty printed.
+
+`
 
 	debugger Debugger
 )
@@ -61,6 +74,10 @@ func init() {
 }
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, usageString, filepath.Base(os.Args[0]))
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	if *versionFlag {
@@ -78,6 +95,13 @@ func main() {
 		}
 		fmt.Println(RevString)
 		os.Exit(0)
+	}
+
+	files := flag.Args()
+
+	if len(files) == 0 {
+		flag.Usage()
+		os.Exit(5)
 	}
 
 	var conn *amqp.Connection
