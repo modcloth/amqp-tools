@@ -123,21 +123,11 @@ func main() {
 	}
 	debugger.Print("channel.established")
 
-	var readFromStdin bool
-
-	files := flag.Args()
+	var bytes []byte
 
 	if len(files) == 1 && files[0] == "-" {
-		readFromStdin = true
-	} else {
-		readFromStdin = false
-	}
-
-	stdin := bufio.NewReader(os.Stdin)
-	for {
-		var bytes []byte
-
-		if readFromStdin {
+		stdin := bufio.NewReader(os.Stdin)
+		for {
 			myBytes, err := stdin.ReadString('\n')
 			bytes = []byte(myBytes)
 			if err != nil {
@@ -146,54 +136,64 @@ func main() {
 				}
 				break
 			}
-		} else {
-			for _, file := range files {
-				bytes, _ = ioutil.ReadFile(file)
+			handleMessageBytes(bytes, channel)
+		}
+
+	} else {
+		for _, file := range files {
+			bytes, err = ioutil.ReadFile(file)
+			if debugger.WithError(err, fmt.Sprintf("Unable to read file %s: ", file), err) {
+				os.Exit(13)
 			}
+			handleMessageBytes(bytes, channel)
 		}
+	}
+}
 
-		delivery := &DeliveryPlus{}
+func handleMessageBytes(bytes []byte, channel *amqp.Channel) {
+	var err error
 
-		err = json.Unmarshal(bytes, &delivery)
+	delivery := &DeliveryPlus{}
 
-		if debugger.WithError(err, "Unable to unmarshal delivery into JSON: ", err) {
-			os.Exit(7)
-		}
+	err = json.Unmarshal(bytes, &delivery)
 
-		/*
-			DO STUFF WITH INPUT LINE
-		*/
+	if debugger.WithError(err, "Unable to unmarshal delivery into JSON: ", err) {
+		os.Exit(7)
+	}
 
-		rawDelivery := delivery.RawDelivery
-		bodyBytes := rawDelivery.Body
+	/*
+		DO STUFF WITH INPUT LINE
+	*/
 
-		errorMessage := &ErrorMessage{}
+	rawDelivery := delivery.RawDelivery
+	bodyBytes := rawDelivery.Body
 
-		err = json.Unmarshal(bodyBytes, &errorMessage)
-		if debugger.WithError(err, "Unable to unmarshal delivery into JSON: ", err) {
-			os.Exit(7)
-		}
+	errorMessage := &ErrorMessage{}
 
-		oMsg := errorMessage.OriginalMessage
+	err = json.Unmarshal(bodyBytes, &errorMessage)
+	if debugger.WithError(err, "Unable to unmarshal delivery into JSON: ", err) {
+		os.Exit(7)
+	}
 
-		debugger.Print(fmt.Sprintf("consumed message: %+v", errorMessage.OriginalMessage))
+	oMsg := errorMessage.OriginalMessage
 
-		timestamp, _ := time.Parse(timeFormat, oMsg.Properties.Timestamp)
+	debugger.Print(fmt.Sprintf("consumed message: %+v", errorMessage.OriginalMessage))
 
-		msg := &amqp.Publishing{
-			ContentType:     oMsg.Properties.ContentType,
-			ContentEncoding: oMsg.Properties.ContentEncoding,
-			DeliveryMode:    uint8(oMsg.Properties.DeliveryMode),
-			CorrelationId:   oMsg.Properties.CorrelationId,
-			MessageId:       oMsg.Properties.MessageId,
-			Timestamp:       timestamp,
-			AppId:           oMsg.Properties.AppId,
-			Body:            []byte(oMsg.Payload),
-		}
+	timestamp, _ := time.Parse(timeFormat, oMsg.Properties.Timestamp)
 
-		err = channel.Publish(oMsg.Exchange, "asdf.oMsg", true, false, *msg)
-		if debugger.WithError(err, "Unable to publish: ", err) {
-			os.Exit(19)
-		}
+	msg := &amqp.Publishing{
+		ContentType:     oMsg.Properties.ContentType,
+		ContentEncoding: oMsg.Properties.ContentEncoding,
+		DeliveryMode:    uint8(oMsg.Properties.DeliveryMode),
+		CorrelationId:   oMsg.Properties.CorrelationId,
+		MessageId:       oMsg.Properties.MessageId,
+		Timestamp:       timestamp,
+		AppId:           oMsg.Properties.AppId,
+		Body:            []byte(oMsg.Payload),
+	}
+
+	err = channel.Publish(oMsg.Exchange, "asdf.oMsg", true, false, *msg)
+	if debugger.WithError(err, "Unable to publish: ", err) {
+		os.Exit(19)
 	}
 }
