@@ -192,7 +192,7 @@ func handleMessageBytes(bytes []byte, channel *amqp.Channel) {
 		Body:            []byte(oMsg.Payload),
 	}
 
-	err = channel.Publish(oMsg.Exchange, "asdf.oMsg", true, false, *msg)
+	err = channel.Publish(oMsg.Exchange, oMsg.RoutingKey, true, false, *msg)
 	if debugger.WithError(err, "Unable to publish: ", err) {
 		os.Exit(19)
 	}
