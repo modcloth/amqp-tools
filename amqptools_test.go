@@ -6,11 +6,11 @@ import (
 )
 
 import (
-	"github.com/modcloth/amqp-tools"
+	"github.com/modcloth/amqp-tools/publishing"
 )
 
 func TestPublishFileResult(t *testing.T) {
-	res := &amqptools.PublishResult{"wat", errors.New("not really, nerds!"), false}
+	res := &publishing.PublishResult{"wat", errors.New("not really, nerds!"), false}
 
 	if res.Message != "wat" {
 		t.Fail()

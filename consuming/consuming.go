@@ -1,4 +1,4 @@
-package amqptools
+package consuming
 
 import (
 	"crypto/sha1"
@@ -12,6 +12,7 @@ import (
 )
 
 import (
+	"github.com/modcloth/amqp-tools"
 	"github.com/streadway/amqp"
 )
 
@@ -85,7 +86,7 @@ type consumerChannel struct {
 	binding    *QueueBinding
 }
 
-func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries chan interface{}, debugger Debugger) {
+func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries chan interface{}, debugger amqptools.Debugger) {
 	defer close(deliveries)
 
 	// establish connection
@@ -175,10 +176,10 @@ func ConsumeForBindings(connectionUri string, bindings QueueBindings, deliveries
 /*
 HANDLING MESSAGES
 */
-func HandleDelivery(delivery amqp.Delivery, debugger Debugger) {
+func HandleDelivery(delivery amqp.Delivery, debugger amqptools.Debugger) {
 	addlData := make(map[string]interface{})
 	addlData["BodyAsString"] = string(delivery.Body)
-	deliveryPlus := &DeliveryPlus{
+	deliveryPlus := &amqptools.DeliveryPlus{
 		delivery,
 		addlData,
 	}

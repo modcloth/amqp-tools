@@ -9,6 +9,7 @@ import (
 
 import (
 	. "github.com/modcloth/amqp-tools"
+	"github.com/modcloth/amqp-tools/consuming"
 	"github.com/streadway/amqp"
 )
 
@@ -34,7 +35,7 @@ var (
 	revFlag     = flag.Bool("rev", false, "Print git revision and exit")
 	quit        = make(chan bool)
 
-	queueBindings QueueBindings
+	queueBindings consuming.QueueBindings
 	debugger      Debugger
 )
 
@@ -75,7 +76,7 @@ func main() {
 			debugger.Print(fmt.Sprintf("Binding to %s", binding))
 		}
 
-		go ConsumeForBindings(*uriFlag, queueBindings, deliveries, debugger)
+		go consuming.ConsumeForBindings(*uriFlag, queueBindings, deliveries, debugger)
 
 		go func() {
 			for delivery := range deliveries {
@@ -84,7 +85,7 @@ func main() {
 					debugger.Print("Done consuming. Thanks for playing!")
 					quit <- true
 				default:
-					HandleDelivery(delivery.(amqp.Delivery), debugger)
+					consuming.HandleDelivery(delivery.(amqp.Delivery), debugger)
 				}
 			}
 		}()

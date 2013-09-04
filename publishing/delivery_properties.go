@@ -1,4 +1,4 @@
-package amqptools
+package publishing
 
 import (
 	"time"
