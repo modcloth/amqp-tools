@@ -1,4 +1,4 @@
-package publishing
+package main
 
 import (
 	"time"

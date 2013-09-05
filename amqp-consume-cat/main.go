@@ -9,7 +9,6 @@ import (
 
 import (
 	. "amqp-tools"
-	"amqp-tools/consuming"
 	"github.com/streadway/amqp"
 )
 
@@ -35,7 +34,7 @@ var (
 	revFlag     = flag.Bool("rev", false, "Print git revision and exit")
 	quit        = make(chan bool)
 
-	queueBindings consuming.QueueBindings
+	queueBindings QueueBindings
 	debugger      Debugger
 )
 
@@ -76,7 +75,7 @@ func main() {
 			debugger.Print(fmt.Sprintf("Binding to %s", binding))
 		}
 
-		go consuming.ConsumeForBindings(*uriFlag, queueBindings, deliveries, debugger)
+		go ConsumeForBindings(*uriFlag, queueBindings, deliveries, debugger)
 
 		go func() {
 			for delivery := range deliveries {
@@ -85,7 +84,7 @@ func main() {
 					debugger.Print("Done consuming. Thanks for playing!")
 					quit <- true
 				default:
-					consuming.HandleDelivery(delivery.(amqp.Delivery), debugger)
+					HandleDelivery(delivery.(amqp.Delivery), debugger)
 				}
 			}
 		}()

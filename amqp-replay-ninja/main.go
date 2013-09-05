@@ -13,7 +13,6 @@ import (
 
 import (
 	. "amqp-tools"
-	"amqp-tools/replaying"
 	"github.com/streadway/amqp"
 )
 
@@ -104,7 +103,7 @@ func main() {
 				}
 				break
 			}
-			replaying.HandleMessageBytes(bytes, channel, debugger)
+			HandleMessageBytes(bytes, channel, debugger)
 		}
 
 	} else {
@@ -113,7 +112,7 @@ func main() {
 			if debugger.WithError(err, fmt.Sprintf("Unable to read file %s: ", file), err) {
 				os.Exit(13)
 			}
-			replaying.HandleMessageBytes(bytes, channel, debugger)
+			HandleMessageBytes(bytes, channel, debugger)
 		}
 	}
 }

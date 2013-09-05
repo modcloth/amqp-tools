@@ -1,4 +1,4 @@
-package consuming
+package main
 
 import (
 	"crypto/sha1"

@@ -1,4 +1,4 @@
-package replaying
+package main
 
 import (
 	"encoding/json"

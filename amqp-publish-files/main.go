@@ -13,7 +13,6 @@ import (
 	"time"
 
 	. "amqp-tools"
-	"amqp-tools/publishing"
 )
 
 const (
@@ -24,7 +23,7 @@ const (
 )
 
 var (
-	deliveryProperties *publishing.DeliveryPropertiesHolder = &publishing.DeliveryPropertiesHolder{}
+	deliveryProperties *DeliveryPropertiesHolder = &DeliveryPropertiesHolder{}
 
 	amqpUriFlag      = flag.String("uri", "", "AMQP connection URI")
 	amqpUsernameFlag = flag.String("user", "guest", "AMQP username")
@@ -112,7 +111,7 @@ func main() {
 	}
 
 	fileChan := make(chan string)
-	resultChan := make(chan *publishing.PublishResult)
+	resultChan := make(chan *PublishResult)
 
 	go func() {
 		defer close(fileChan)
@@ -139,7 +138,7 @@ func main() {
 	}()
 
 	for i := 0; i < *numRoutinesFlag; i++ {
-		go publishing.PublishFiles(fileChan, connectionUri, exchange, *routingKeyFlag,
+		go PublishFiles(fileChan, connectionUri, exchange, *routingKeyFlag,
 			*mandatoryFlag, *immediateFlag, deliveryProperties.DeliveryPropertiesGenerator(), resultChan)
 	}
 

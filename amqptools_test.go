@@ -1,16 +1,13 @@
 package amqptools_test
 
 import (
+	"amqp-tools"
 	"errors"
 	"testing"
 )
 
-import (
-	"amqp-tools/publishing"
-)
-
 func TestPublishFileResult(t *testing.T) {
-	res := &publishing.PublishResult{"wat", errors.New("not really, nerds!"), false}
+	res := &amqptools.PublishResult{"wat", errors.New("not really, nerds!"), false}
 
 	if res.Message != "wat" {
 		t.Fail()
