@@ -52,9 +52,7 @@ func HandleMessageBytes(bytes []byte, channel *amqp.Channel, debugger amqptools.
 		os.Exit(7)
 	}
 
-	/*
-		DO STUFF WITH INPUT LINE
-	*/
+	// DO STUFF WITH INPUT LINE
 
 	rawDelivery := delivery.RawDelivery
 	bodyBytes := rawDelivery.Body
