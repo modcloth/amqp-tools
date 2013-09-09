@@ -18,6 +18,7 @@ import (
 
 var (
 	uriFlag     = flag.String("U", "amqp://guest:guest@localhost:5672", "AMQP Connection URI")
+	timeNow     = flag.Bool("timenow", false, "If true, replace original message timestamp with current time.")
 	versionFlag = flag.Bool("version", false, "Print version and exit")
 	revFlag     = flag.Bool("rev", false, "Print git revision and exit")
 	usageString = `Usage: %s [options] <file> [file file ...]

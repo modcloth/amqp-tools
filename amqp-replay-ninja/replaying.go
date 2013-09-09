@@ -68,7 +68,13 @@ func HandleMessageBytes(bytes []byte, channel *amqp.Channel, debugger amqptools.
 
 	debugger.Print(fmt.Sprintf("consumed message: %+v", errorMessage.OriginalMessage))
 
-	timestamp, _ := time.Parse(timeFormat, oMsg.Properties.Timestamp)
+	var timestamp time.Time
+
+	if *timeNow {
+		timestamp = time.Now().UTC()
+	} else {
+		timestamp, _ = time.Parse(timeFormat, oMsg.Properties.Timestamp)
+	}
 
 	msg := &amqp.Publishing{
 		ContentType:     oMsg.Properties.ContentType,
