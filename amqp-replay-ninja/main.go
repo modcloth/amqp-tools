@@ -84,8 +84,8 @@ func main() {
 
 	defer conn.Close()
 
+	channel, err = conn.Channel()
 	if debugger.WithError(err, "Failed to open channel ", err) {
-		channel, err = conn.Channel()
 		os.Exit(3)
 	}
 	debugger.Print("channel.established")
