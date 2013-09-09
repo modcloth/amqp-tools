@@ -73,7 +73,10 @@ func HandleMessageBytes(bytes []byte, channel *amqp.Channel, debugger amqptools.
 	if *timeNow {
 		timestamp = time.Now().UTC()
 	} else {
-		timestamp, _ = time.Parse(timeFormat, oMsg.Properties.Timestamp)
+		timestamp, err = time.Parse(timeFormat, oMsg.Properties.Timestamp)
+		if debugger.WithError(err, fmt.Sprintf("Unable to parse timestamp: %+v", oMsg.Properties.Timestamp), err) {
+			os.Exit(11)
+		}
 	}
 
 	msg := &amqp.Publishing{
