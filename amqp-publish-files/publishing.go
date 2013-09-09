@@ -1,4 +1,4 @@
-package amqptools
+package main
 
 import (
 	"errors"
@@ -9,14 +9,9 @@ import (
 )
 
 import (
+	. "amqp-tools"
 	"github.com/streadway/amqp"
 )
-
-type PublishResult struct {
-	Message string
-	Error   error
-	IsFatal bool
-}
 
 func PublishFiles(files chan string, connectionUri, exchange,
 	routingKey string, mandatory, immediate bool, deliveryProperties DeliveryProperties, results chan *PublishResult) {

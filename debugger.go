@@ -21,6 +21,23 @@ func (d *Debugger) SetDebug(val bool) {
 	d.on = val
 }
 
+func (d *Debugger) String() string {
+	return ""
+}
+
+func (d *Debugger) Set(value string) error {
+	if value == "true" {
+		d.On()
+	} else {
+		d.Off()
+	}
+	return nil
+}
+
+func (d *Debugger) IsBoolFlag() bool {
+	return true
+}
+
 func (d *Debugger) Print(message ...interface{}) {
 	if d.on {
 		log.Println(message...)

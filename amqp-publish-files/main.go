@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/modcloth/amqp-tools"
+	. "amqp-tools"
 )
 
 const (
@@ -22,40 +22,8 @@ const (
 	partialFailure  = 9
 )
 
-type DeliveryPropertiesHolder struct {
-	ContentType            *string
-	ContentEncoding        *string
-	DeliveryMode           *uint
-	Priority               *uint
-	CorrelationIdGenerator NexterWrapper
-	ReplyTo                *string
-	Expiration             *string
-	MessageIdGenerator     NexterWrapper
-	Timestamp              *int64
-	Type                   *string
-	UserId                 *string
-	AppId                  *string
-}
-
-func (me *DeliveryPropertiesHolder) DeliveryPropertiesGenerator() *DeliveryPropertiesGenerator {
-	return &DeliveryPropertiesGenerator{
-		ContentType:            *me.ContentType,
-		ContentEncoding:        *me.ContentEncoding,
-		DeliveryMode:           uint8(*me.DeliveryMode),
-		Priority:               uint8(*me.Priority),
-		CorrelationIdGenerator: &me.CorrelationIdGenerator,
-		ReplyTo:                *me.ReplyTo,
-		Expiration:             *me.Expiration,
-		MessageIdGenerator:     &me.MessageIdGenerator,
-		Timestamp:              *me.Timestamp,
-		Type:                   *me.Type,
-		UserId:                 *me.UserId,
-		AppId:                  *me.AppId,
-	}
-}
-
 var (
-	deliveryProperties *DeliveryPropertiesHolder = new(DeliveryPropertiesHolder)
+	deliveryProperties *DeliveryPropertiesHolder = &DeliveryPropertiesHolder{}
 
 	amqpUriFlag      = flag.String("uri", "", "AMQP connection URI")
 	amqpUsernameFlag = flag.String("user", "guest", "AMQP username")
@@ -64,16 +32,12 @@ var (
 	amqpVHostFlag    = flag.String("vhost", "", "AMQP vhost")
 	amqpPortFlag     = flag.Int("port", 5672, "AMQP port")
 
-	routingKeyFlag = flag.String("routing-key", "",
-		"Publish message to routing key")
-	mandatoryFlag = flag.Bool("mandatory", false,
-		"Publish message with mandatory property set.")
-	immediateFlag = flag.Bool("immediate", false,
-		"Publish message with immediate property set.")
-	numRoutinesFlag = flag.Int("threads", 3,
-		"Number of concurrent publishers")
-	revFlag     = false
-	versionFlag = false
+	routingKeyFlag  = flag.String("routing-key", "", "Publish message to routing key")
+	mandatoryFlag   = flag.Bool("mandatory", false, "Publish message with mandatory property set.")
+	immediateFlag   = flag.Bool("immediate", false, "Publish message with immediate property set.")
+	numRoutinesFlag = flag.Int("threads", 3, "Number of concurrent publishers")
+	revFlag         = false
+	versionFlag     = false
 
 	usageString = `Usage: %s [options] <exchange> <file> [file file ...]
 
@@ -86,12 +50,9 @@ whitespace in each entry will be stripped before attempting to open the file.
 )
 
 func init() {
-	deliveryProperties.ContentType = flag.String("content-type", "",
-		"Content-type, else derived from file extension.")
-	deliveryProperties.ContentEncoding = flag.String("content-encoding", "UTF-8",
-		"Mime content-encoding.")
-	deliveryProperties.DeliveryMode = flag.Uint("delivery-mode", 2,
-		"Delivery mode (1 for non-persistent, 2 for persistent.")
+	deliveryProperties.ContentType = flag.String("content-type", "", "Content-type, else derived from file extension.")
+	deliveryProperties.ContentEncoding = flag.String("content-encoding", "UTF-8", "Mime content-encoding.")
+	deliveryProperties.DeliveryMode = flag.Uint("delivery-mode", 2, "Delivery mode (1 for non-persistent, 2 for persistent.")
 	deliveryProperties.Priority = flag.Uint("priority", 0, "queue implementation use - 0 to 9")
 	deliveryProperties.ReplyTo = flag.String("replyto", "", "application use - address to to reply to (ex: rpc)")
 	deliveryProperties.Expiration = flag.String("expiration", "", "implementation use - message expiration spec")
@@ -100,37 +61,10 @@ func init() {
 	deliveryProperties.UserId = flag.String("userid", "", "application use - creating user - should be authenticated user")
 	deliveryProperties.AppId = flag.String("appid", "", "application use - creating application id")
 
-	flag.Var(&deliveryProperties.CorrelationIdGenerator,
-		"correlationid",
-		"'series' for incrementing ids, 'uuid' for UUIDs, static value otherwise")
-	flag.Var(&deliveryProperties.MessageIdGenerator,
-		"messageid",
-		"'series' for incrementing ids, 'uuid' for UUIDs, static value otherwise")
+	flag.Var(&deliveryProperties.CorrelationIdGenerator, "correlationid", "'series' for incrementing ids, 'uuid' for UUIDs, static value otherwise")
+	flag.Var(&deliveryProperties.MessageIdGenerator, "messageid", "'series' for incrementing ids, 'uuid' for UUIDs, static value otherwise")
 	flag.BoolVar(&versionFlag, "version", false, "Print version and exit")
 	flag.BoolVar(&revFlag, "rev", false, "Print git revision and exit")
-}
-
-type NexterWrapper struct{ nexter Nexter }
-
-func (nw *NexterWrapper) Next() (string, error) {
-	if nw.nexter == nil {
-		nw.nexter = new(UUIDProvider)
-	}
-	return nw.nexter.Next()
-}
-func (nw *NexterWrapper) String() string { return "uuid" }
-func (nw *NexterWrapper) Set(arg string) error {
-	switch arg {
-	case "uuid":
-		nw.nexter = new(UUIDProvider)
-	case "series":
-		nw.nexter = new(SeriesProvider)
-	default:
-		nw.nexter = &StaticProvider{
-			Value: arg,
-		}
-	}
-	return nil
 }
 
 func main() {
