@@ -1,6 +1,7 @@
-package amqptools
+package main
 
 import (
+	"amqp-tools"
 	"time"
 )
 
@@ -9,14 +10,45 @@ type DeliveryPropertiesGenerator struct {
 	ContentEncoding        string
 	DeliveryMode           uint8
 	Priority               uint8
-	CorrelationIdGenerator Nexter
+	CorrelationIdGenerator amqptools.Nexter
 	ReplyTo                string
 	Expiration             string
-	MessageIdGenerator     Nexter
+	MessageIdGenerator     amqptools.Nexter
 	Timestamp              int64
 	Type                   string
 	UserId                 string
 	AppId                  string
+}
+type DeliveryPropertiesHolder struct {
+	ContentType            *string
+	ContentEncoding        *string
+	DeliveryMode           *uint
+	Priority               *uint
+	CorrelationIdGenerator NexterWrapper
+	ReplyTo                *string
+	Expiration             *string
+	MessageIdGenerator     NexterWrapper
+	Timestamp              *int64
+	Type                   *string
+	UserId                 *string
+	AppId                  *string
+}
+
+func (me *DeliveryPropertiesHolder) DeliveryPropertiesGenerator() *DeliveryPropertiesGenerator {
+	return &DeliveryPropertiesGenerator{
+		ContentType:            *me.ContentType,
+		ContentEncoding:        *me.ContentEncoding,
+		DeliveryMode:           uint8(*me.DeliveryMode),
+		Priority:               uint8(*me.Priority),
+		CorrelationIdGenerator: &me.CorrelationIdGenerator,
+		ReplyTo:                *me.ReplyTo,
+		Expiration:             *me.Expiration,
+		MessageIdGenerator:     &me.MessageIdGenerator,
+		Timestamp:              *me.Timestamp,
+		Type:                   *me.Type,
+		UserId:                 *me.UserId,
+		AppId:                  *me.AppId,
+	}
 }
 
 func (dph *DeliveryPropertiesGenerator) GetContentType() string     { return dph.ContentType }
