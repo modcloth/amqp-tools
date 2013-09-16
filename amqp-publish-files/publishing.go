@@ -1,4 +1,4 @@
-package amqptools
+package main
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 )
 
 import (
+	. "amqp-tools"
 	"github.com/streadway/amqp"
 )
 

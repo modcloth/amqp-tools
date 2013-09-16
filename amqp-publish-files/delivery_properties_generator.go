@@ -1,6 +1,7 @@
-package amqptools
+package main
 
 import (
+	"amqp-tools"
 	"time"
 )
 
@@ -9,10 +10,10 @@ type DeliveryPropertiesGenerator struct {
 	ContentEncoding        string
 	DeliveryMode           uint8
 	Priority               uint8
-	CorrelationIdGenerator Nexter
+	CorrelationIdGenerator amqptools.Nexter
 	ReplyTo                string
 	Expiration             string
-	MessageIdGenerator     Nexter
+	MessageIdGenerator     amqptools.Nexter
 	Timestamp              int64
 	Type                   string
 	UserId                 string

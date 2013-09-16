@@ -1,4 +1,4 @@
-package amqptools
+package main
 
 import (
 	"time"
