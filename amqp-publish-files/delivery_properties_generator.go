@@ -1,8 +1,9 @@
 package main
 
 import (
-	"amqp-tools"
 	"time"
+
+	"github.com/modcloth/amqp-tools"
 )
 
 type DeliveryPropertiesGenerator struct {
