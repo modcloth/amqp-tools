@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	. "amqp-tools"
+	. "github.com/modcloth/amqp-tools"
 	"github.com/streadway/amqp"
 )
 

@@ -1,9 +1,10 @@
 package amqptools_test
 
 import (
-	"amqp-tools"
 	"errors"
 	"testing"
+
+	"github.com/modcloth/amqp-tools"
 )
 
 func TestPublishFileResult(t *testing.T) {

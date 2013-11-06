@@ -1,6 +1,6 @@
-LIBS := amqp-tools
-REV_VAR := amqp-tools.RevString
-VERSION_VAR := amqp-tools.VersionString
+LIBS := github.com/modcloth/amqp-tools
+REV_VAR := github.com/modcloth/amqp-tools.RevString
+VERSION_VAR := github.com/modcloth/amqp-tools.VersionString
 REPO_VERSION := $(shell git describe --always --dirty --tags)
 REPO_REV := $(shell git rev-parse --sq HEAD)
 GOBUILD_VERSION_ARGS := -ldflags "-X $(REV_VAR) $(REPO_REV) -X $(VERSION_VAR) $(REPO_VERSION)"
@@ -18,7 +18,6 @@ test:
 	go test $(GOBUILD_VERSION_ARGS) -x -v $(LIBS)
 
 deps: johnny_deps
-	if [ ! -L $${GOPATH%%:*}/src/amqp-tools ] ; then gvm linkthis ; fi
 	./johnny_deps
 
 johnny_deps:

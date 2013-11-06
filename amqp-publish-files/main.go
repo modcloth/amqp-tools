@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	. "amqp-tools"
+	. "github.com/modcloth/amqp-tools"
 )
 
 const (
